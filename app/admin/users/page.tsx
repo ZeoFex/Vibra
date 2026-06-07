@@ -8,9 +8,9 @@ import { currentUser } from "@/lib/mock-data";
 
 const mockUsers = [
   currentUser,
-  { ...currentUser, id: "user-2", name: "Sarah Chen", email: "sarah@vibra.app", tier: "premium" as const, avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&h=100&fit=crop" },
-  { ...currentUser, id: "user-3", name: "Marcus Lee", email: "marcus@vibra.app", tier: "free" as const, avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop" },
-  { ...currentUser, id: "user-4", name: "Emma Wilson", email: "emma@vibra.app", tier: "premium" as const, avatar: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100&h=100&fit=crop" },
+  { ...currentUser, id: "user-2", username: "sarahchen", name: "Sarah Chen", email: "sarah@vibra.app", tier: "premium" as const, avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&h=100&fit=crop" },
+  { ...currentUser, id: "user-3", username: "marcuslee", name: "Marcus Lee", email: "marcus@vibra.app", tier: "free" as const, avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop" },
+  { ...currentUser, id: "user-4", username: "emmawilson", name: "Emma Wilson", email: "emma@vibra.app", tier: "premium" as const, avatar: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100&h=100&fit=crop" },
 ];
 
 export default function AdminUsersPage() {

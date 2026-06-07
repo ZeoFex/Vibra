@@ -2,7 +2,7 @@
 
 import { use } from "react";
 import Image from "next/image";
-import { Heart, Share2, Clock } from "lucide-react";
+import { Heart, Share2 } from "lucide-react";
 import { getAlbumById } from "@/lib/mock-data/albums";
 import { getSongsByAlbum } from "@/lib/mock-data/songs";
 import { usePlayer } from "@/lib/contexts/app-context";

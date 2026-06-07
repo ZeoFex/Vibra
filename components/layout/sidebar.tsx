@@ -21,6 +21,7 @@ import { useState } from "react";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/lib/contexts/app-context";
+import { useSocial } from "@/lib/contexts/social-context";
 import { Button } from "@/components/ui/button";
 
 const navItems = [
@@ -36,6 +37,7 @@ const navItems = [
 export function Sidebar() {
   const pathname = usePathname();
   const { user, logout } = useAuth();
+  const { pendingCount } = useSocial();
   const [mobileOpen, setMobileOpen] = useState(false);
 
   const NavContent = () => (
@@ -65,6 +67,11 @@ export function Sidebar() {
           >
             <Icon size={20} />
             {label}
+            {href === "/social" && pendingCount > 0 && (
+              <span className="ml-auto flex h-5 min-w-5 items-center justify-center rounded-full bg-violet-600 px-1.5 text-xs font-bold">
+                {pendingCount}
+              </span>
+            )}
           </Link>
         ))}
       </nav>
@@ -138,11 +145,17 @@ export function TopBar() {
     "/library": "Your Library",
     "/ai": "Vibra AI",
     "/social": "Social",
+    "/social/messages": "Messages",
+    "/social/community": "Community Chat",
+    "/social/requests": "Friend Requests",
     "/notifications": "Notifications",
     "/premium": "Premium",
     "/profile": "Profile",
   };
-  const title = Object.entries(titles).find(([k]) => pathname.startsWith(k))?.[1] ?? "Vibra";
+  const title =
+    Object.entries(titles)
+      .sort(([a], [b]) => b.length - a.length)
+      .find(([k]) => pathname === k || pathname.startsWith(k + "/"))?.[1] ?? "Vibra";
 
   return (
     <header className="sticky top-0 z-40 flex items-center justify-between border-b border-white/5 bg-black/40 px-4 py-3 backdrop-blur-xl md:px-6">

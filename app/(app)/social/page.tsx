@@ -1,9 +1,10 @@
 "use client";
 
+import Link from "next/link";
 import Image from "next/image";
-import { Heart, Music, UserPlus, ListMusic, Share2 } from "lucide-react";
+import { Heart, Music, UserPlus, ListMusic, Share2, MessageCircle } from "lucide-react";
 import { activityFeed } from "@/lib/mock-data";
-import { Button } from "@/components/ui/button";
+import { useSocial } from "@/lib/contexts/social-context";
 
 const activityIcons = {
   played: Music,
@@ -21,13 +22,37 @@ const activityLabels = {
   shared: "shared",
 };
 
-export default function SocialPage() {
+export default function SocialFeedPage() {
+  const { friends } = useSocial();
+
   return (
-    <div className="mx-auto max-w-2xl space-y-8">
-      <div>
-        <h1 className="text-2xl font-bold">Social</h1>
-        <p className="text-sm text-white/50">See what your friends are listening to</p>
-      </div>
+    <div className="space-y-8">
+      {friends.length > 0 && (
+        <section>
+          <h2 className="mb-4 text-lg font-semibold">Your Friends</h2>
+          <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-hide">
+            {friends.map((friend) => (
+              <Link
+                key={friend.id}
+                href={`/social/messages/${friend.id}`}
+                className="flex shrink-0 flex-col items-center gap-2 transition-opacity hover:opacity-80"
+              >
+                <div className="relative">
+                  <Image
+                    src={friend.avatar}
+                    alt={friend.name}
+                    width={56}
+                    height={56}
+                    className="rounded-full ring-2 ring-violet-600/30"
+                  />
+                  <MessageCircle size={14} className="absolute -bottom-1 -right-1 rounded-full bg-violet-600 p-0.5 text-white" />
+                </div>
+                <span className="max-w-[72px] truncate text-xs font-medium">@{friend.username}</span>
+              </Link>
+            ))}
+          </div>
+        </section>
+      )}
 
       <section>
         <h2 className="mb-4 text-lg font-semibold">Activity Feed</h2>
@@ -62,26 +87,6 @@ export default function SocialPage() {
               </div>
             );
           })}
-        </div>
-      </section>
-
-      <section>
-        <h2 className="mb-4 text-lg font-semibold">Suggested People</h2>
-        <div className="space-y-3">
-          {[
-            { name: "Sarah Chen", avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&h=100&fit=crop", mutual: 12 },
-            { name: "Marcus Lee", avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop", mutual: 8 },
-            { name: "Emma Wilson", avatar: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100&h=100&fit=crop", mutual: 5 },
-          ].map((person) => (
-            <div key={person.name} className="flex items-center gap-4 rounded-xl p-4 glass">
-              <Image src={person.avatar} alt={person.name} width={48} height={48} className="rounded-full" />
-              <div className="flex-1">
-                <p className="font-medium">{person.name}</p>
-                <p className="text-xs text-white/50">{person.mutual} mutual connections</p>
-              </div>
-              <Button variant="secondary" size="sm">Follow</Button>
-            </div>
-          ))}
         </div>
       </section>
     </div>

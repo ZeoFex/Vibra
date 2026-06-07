@@ -3,6 +3,7 @@ export type SubscriptionTier = "free" | "premium";
 export interface User {
   id: string;
   name: string;
+  username: string;
   email: string;
   avatar: string;
   bio?: string;
@@ -10,6 +11,46 @@ export interface User {
   followers: number;
   following: number;
   createdAt: string;
+}
+
+export interface SocialProfile {
+  id: string;
+  username: string;
+  name: string;
+  avatar: string;
+  bio?: string;
+  likedSongIds: string[];
+  likedArtistIds: string[];
+}
+
+export interface FriendRequest {
+  id: string;
+  from: SocialProfile;
+  toUserId: string;
+  status: "pending" | "accepted" | "declined";
+  createdAt: string;
+  matchReason?: string;
+}
+
+export interface DownloadedTrack {
+  songId: string;
+  downloadedAt: string;
+  sizeMb: number;
+}
+
+export interface ChatMessage {
+  id: string;
+  senderId: string;
+  senderName: string;
+  senderAvatar: string;
+  senderUsername: string;
+  content: string;
+  createdAt: string;
+}
+
+export interface PrivateConversation {
+  friendId: string;
+  messages: ChatMessage[];
 }
 
 export interface Artist {

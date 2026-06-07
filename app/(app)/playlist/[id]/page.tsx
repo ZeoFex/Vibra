@@ -2,7 +2,7 @@
 
 import { use } from "react";
 import Image from "next/image";
-import { Play, Heart, Share2, MoreHorizontal, Clock } from "lucide-react";
+import { Heart, Share2, MoreHorizontal } from "lucide-react";
 import { getPlaylistById } from "@/lib/mock-data/playlists";
 import { getSongById } from "@/lib/mock-data/songs";
 import { usePlayer } from "@/lib/contexts/app-context";
@@ -58,9 +58,7 @@ export default function PlaylistPage({ params }: { params: Promise<{ id: string 
       <div className="mb-4 hidden grid-cols-[auto_1fr_auto] gap-4 border-b border-white/10 px-3 pb-2 text-xs text-white/40 sm:grid">
         <span>#</span>
         <span>Title</span>
-        <span className="flex items-center gap-1">
-          <Clock size={14} />
-        </span>
+        <span>Duration</span>
       </div>
 
       <div className="space-y-1">
