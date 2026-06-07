@@ -6,9 +6,10 @@ import {
   useState,
   useCallback,
   useEffect,
+  useMemo,
   type ReactNode,
 } from "react";
-import type { Song } from "@/types";
+import type { Song, DownloadedTrack } from "@/types";
 import { currentUser as mockUser } from "@/lib/mock-data";
 import type { User } from "@/types";
 
@@ -25,6 +26,7 @@ interface PlayerState {
   likedSongs: Set<string>;
   likedAlbums: Set<string>;
   likedArtists: Set<string>;
+  downloads: Map<string, DownloadedTrack>;
 }
 
 interface PlayerContextValue extends PlayerState {
@@ -44,6 +46,10 @@ interface PlayerContextValue extends PlayerState {
   isAlbumLiked: (albumId: string) => boolean;
   isArtistLiked: (artistId: string) => boolean;
   addToQueue: (song: Song) => void;
+  downloadSong: (song: Song) => void;
+  removeDownload: (songId: string) => void;
+  isDownloaded: (songId: string) => boolean;
+  downloadedSongIds: string[];
 }
 
 const PlayerContext = createContext<PlayerContextValue | null>(null);
@@ -60,6 +66,11 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     likedSongs: new Set(["song-1", "song-3", "song-5"]),
     likedAlbums: new Set(["album-1", "album-3"]),
     likedArtists: new Set(["artist-1", "artist-3"]),
+    downloads: new Map([
+      ["song-1", { songId: "song-1", downloadedAt: "2026-06-01T10:00:00Z", sizeMb: 8.4 }],
+      ["song-5", { songId: "song-5", downloadedAt: "2026-06-02T14:30:00Z", sizeMb: 6.2 }],
+      ["song-3", { songId: "song-3", downloadedAt: "2026-06-04T09:00:00Z", sizeMb: 9.1 }],
+    ]),
   });
 
   useEffect(() => {
@@ -184,6 +195,36 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     setState((prev) => ({ ...prev, queue: [...prev.queue, song] }));
   }, []);
 
+  const downloadSong = useCallback((song: Song) => {
+    setState((prev) => {
+      const downloads = new Map(prev.downloads);
+      downloads.set(song.id, {
+        songId: song.id,
+        downloadedAt: new Date().toISOString(),
+        sizeMb: Math.round((song.duration / 60) * 2.1 * 10) / 10,
+      });
+      return { ...prev, downloads };
+    });
+  }, []);
+
+  const removeDownload = useCallback((songId: string) => {
+    setState((prev) => {
+      const downloads = new Map(prev.downloads);
+      downloads.delete(songId);
+      return { ...prev, downloads };
+    });
+  }, []);
+
+  const isDownloaded = useCallback(
+    (songId: string) => state.downloads.has(songId),
+    [state.downloads]
+  );
+
+  const downloadedSongIds = useMemo(
+    () => Array.from(state.downloads.keys()),
+    [state.downloads]
+  );
+
   return (
     <PlayerContext.Provider
       value={{
@@ -204,6 +245,10 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
         isAlbumLiked,
         isArtistLiked,
         addToQueue,
+        downloadSong,
+        removeDownload,
+        isDownloaded,
+        downloadedSongIds,
       }}
     >
       {children}

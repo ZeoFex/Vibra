@@ -27,6 +27,7 @@ export const moods: MoodOption[] = [
 export const currentUser: User = {
   id: "user-1",
   name: "Alex Rivera",
+  username: "alexrivera",
   email: "alex@vibra.app",
   avatar: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=200&h=200&fit=crop",
   bio: "Music lover. Always discovering new sounds.",
