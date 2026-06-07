@@ -59,8 +59,10 @@ export default function AdminLoginPage() {
           </Button>
 
           <p className="mt-6 text-xs text-white/40">
-            Demo access requires <code className="text-white/50">VIBRA_ADMIN_DEMO_PASSWORD</code> in{" "}
-           </p>
+            Use a demo admin email with the password set in{" "}
+            <code className="text-white/50">.env.local</code> as{" "}
+            <code className="text-white/50">VIBRA_ADMIN_DEMO_PASSWORD</code>.
+          </p>
         </form>
 
         <p className="mt-6 text-center text-sm text-white/40">
