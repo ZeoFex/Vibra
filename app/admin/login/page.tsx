@@ -20,10 +20,10 @@ export default function AdminLoginPage() {
     e.preventDefault();
     setLoading(true);
     setError("");
-    const ok = await login(email, password);
+    const result = await login(email, password);
     setLoading(false);
-    if (ok) router.push("/admin");
-    else setError("Invalid admin credentials");
+    if (result.ok) router.push("/admin");
+    else setError(result.error ?? "Invalid admin credentials");
   };
 
   return (
@@ -58,11 +58,10 @@ export default function AdminLoginPage() {
             {loading ? "Authenticating..." : "Sign in to Admin"}
           </Button>
 
-          <div className="mt-6 rounded-lg bg-white/5 p-3 text-xs text-white/40">
-            <p className="font-medium text-white/60">Demo accounts:</p>
-            <p className="mt-1">Super Admin: admin@vibra.app / admin123</p>
-            <p>Verification Manager: verify@vibra.app / verify123</p>
-          </div>
+          <p className="mt-6 text-xs text-white/40">
+            Demo access requires <code className="text-white/50">VIBRA_ADMIN_DEMO_PASSWORD</code> in{" "}
+            <code className="text-white/50">.env.local</code>. See <code className="text-white/50">.env.example</code>.
+          </p>
         </form>
 
         <p className="mt-6 text-center text-sm text-white/40">

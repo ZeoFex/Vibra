@@ -32,10 +32,10 @@ export const adminUsers: AdminUser[] = [
   },
 ];
 
-export const demoAdminAccounts: { email: string; password: string; admin: AdminUser }[] = [
-  { email: "admin@vibra.app", password: "admin123", admin: adminUsers[0] },
-  { email: "verify@vibra.app", password: "verify123", admin: adminUsers[1] },
-];
+export const demoAdminUsersByEmail: Record<string, AdminUser> = {
+  "admin@vibra.app": adminUsers[0],
+  "verify@vibra.app": adminUsers[1],
+};
 
 export const artistApplications: ArtistApplication[] = [
   {

@@ -23,7 +23,6 @@ import type {
   PayoutStatus,
 } from "@/types/admin";
 import {
-  demoAdminAccounts,
   artistApplications as initialApplications,
   musicReviewQueue as initialMusicQueue,
   moderationReports as initialReports,
@@ -35,7 +34,7 @@ import {
 interface AdminContextValue {
   admin: AdminUser | null;
   isAuthenticated: boolean;
-  login: (email: string, password: string) => Promise<boolean>;
+  login: (email: string, password: string) => Promise<{ ok: boolean; error?: string }>;
   logout: () => void;
   applications: ArtistApplication[];
   musicQueue: MusicReviewItem[];
@@ -88,13 +87,23 @@ export function AdminProvider({ children }: { children: ReactNode }) {
 
   const login = useCallback(async (email: string, password: string) => {
     await new Promise((r) => setTimeout(r, 600));
-    const account = demoAdminAccounts.find(
-      (a) => a.email === email && a.password === password
-    );
-    if (!account) return false;
-    setAdmin(account.admin);
-    localStorage.setItem("vibra-admin", JSON.stringify(account.admin));
-    return true;
+    try {
+      const res = await fetch("/api/admin/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
+      if (!res.ok) {
+        const data = (await res.json().catch(() => ({}))) as { error?: string };
+        return { ok: false, error: data.error ?? "Invalid admin credentials" };
+      }
+      const data = (await res.json()) as { admin: AdminUser };
+      setAdmin(data.admin);
+      localStorage.setItem("vibra-admin", JSON.stringify(data.admin));
+      return { ok: true };
+    } catch {
+      return { ok: false, error: "Unable to reach admin login service" };
+    }
   }, []);
 
   const logout = useCallback(() => {
