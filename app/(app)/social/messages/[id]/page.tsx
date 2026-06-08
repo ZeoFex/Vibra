@@ -44,7 +44,7 @@ export default function PrivateChatPage({ params }: { params: Promise<{ id: stri
   }
 
   return (
-    <div className="-mx-4 flex flex-col md:-mx-8" style={{ height: "calc(100vh - 220px)" }}>
+    <div className="-mx-3 flex flex-col sm:-mx-4 md:-mx-8 chat-panel">
       <div className="flex items-center gap-3 border-b border-white/10 px-4 py-3">
         <Link href="/social/messages" className="rounded-lg p-1.5 text-white/60 hover:bg-white/10 hover:text-white">
           <ArrowLeft size={20} />

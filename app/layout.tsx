@@ -1,6 +1,8 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { AuthProvider, PlayerProvider } from "@/lib/contexts/app-context";
+import { ArtistAuthProvider } from "@/lib/contexts/artist-auth-context";
+import { ArtistUploadProvider } from "@/lib/contexts/artist-upload-context";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -18,6 +20,12 @@ export const metadata: Metadata = {
   description: "A personalized, immersive, and intelligent music experience.",
 };
 
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
+};
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -28,9 +36,13 @@ export default function RootLayout({
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased dark`}
     >
-      <body className="min-h-full bg-black text-white">
+      <body className="min-h-full min-h-dvh bg-black text-white">
         <AuthProvider>
-          <PlayerProvider>{children}</PlayerProvider>
+          <ArtistAuthProvider>
+            <ArtistUploadProvider>
+              <PlayerProvider>{children}</PlayerProvider>
+            </ArtistUploadProvider>
+          </ArtistAuthProvider>
         </AuthProvider>
       </body>
     </html>

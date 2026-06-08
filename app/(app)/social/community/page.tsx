@@ -17,7 +17,7 @@ export default function CommunityChatPage() {
   );
 
   return (
-    <div className="-mx-4 flex flex-col md:-mx-8" style={{ height: "calc(100vh - 220px)" }}>
+    <div className="-mx-3 flex flex-col sm:-mx-4 md:-mx-8 chat-panel">
       <div className="border-b border-white/10 px-4 py-4">
         <div className="flex items-center gap-3">
           <div className="flex h-10 w-10 items-center justify-center rounded-full bg-violet-600/30">

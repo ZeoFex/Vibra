@@ -14,6 +14,7 @@ import {
 } from "@/lib/mock-data";
 import { getSongById } from "@/lib/mock-data/songs";
 import { usePlayer } from "@/lib/contexts/app-context";
+import { useArtistUploads } from "@/lib/contexts/artist-upload-context";
 import {
   SectionHeader,
   HorizontalScroll,
@@ -22,20 +23,21 @@ import {
   PlaylistCard,
   GenreCard,
 } from "@/components/music/music-cards";
-import { songs } from "@/lib/mock-data/songs";
+import { ThumbnailCard } from "@/components/music/thumbnail-card";
 import { cn } from "@/lib/utils";
 
 export default function HomePage() {
   const { play } = usePlayer();
+  const { publishedSongs, getSongById: resolveSong, allSongs } = useArtistUploads();
   const newReleases = getNewReleases().slice(0, 6);
 
   const handlePlaySong = (songId: string) => {
-    const song = getSongById(songId);
-    if (song) play(song, songs);
+    const song = resolveSong(songId) ?? getSongById(songId);
+    if (song) play(song, allSongs);
   };
 
   return (
-    <div className="space-y-10">
+    <div className="space-y-8 sm:space-y-10">
       {/* Greeting */}
       <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-violet-600/30 to-fuchsia-600/20 p-6 md:p-8">
         <div className="absolute right-0 top-0 h-40 w-40 rounded-full bg-violet-500/20 blur-3xl" />
@@ -58,6 +60,23 @@ export default function HomePage() {
         </div>
       </div>
 
+      {/* Artist uploads — title + cover only (Spotify-style) */}
+      {publishedSongs.length > 0 && (
+        <section>
+          <SectionHeader title="New from Artists" href="/artist/login" />
+          <HorizontalScroll>
+            {publishedSongs.map((song) => (
+              <ThumbnailCard
+                key={song.id}
+                title={song.title}
+                cover={song.cover}
+                onPlay={() => handlePlaySong(song.id)}
+              />
+            ))}
+          </HorizontalScroll>
+        </section>
+      )}
+
       {/* Recently Played */}
       <section>
         <SectionHeader title="Recently Played" href="/library" />
@@ -66,7 +85,7 @@ export default function HomePage() {
             const song = getSongById(id);
             if (!song) return null;
             return (
-              <div key={id} className="min-w-[200px]">
+              <div key={id} className="w-[180px] shrink-0 snap-start sm:min-w-[200px]">
                 <SongCard song={song} onPlay={() => handlePlaySong(id)} />
               </div>
             );
@@ -96,7 +115,7 @@ export default function HomePage() {
             const song = getSongById(id);
             if (!song) return null;
             return (
-              <div key={id} className="min-w-[160px]">
+              <div key={id} className="w-[140px] shrink-0 snap-start sm:min-w-[160px] sm:w-auto">
                 <div
                   className="group relative mb-2 aspect-square cursor-pointer overflow-hidden rounded-xl"
                   onClick={() => handlePlaySong(id)}
@@ -126,14 +145,16 @@ export default function HomePage() {
         <SectionHeader title="Top Charts" />
         <div className="space-y-1">
           {topCharts.slice(0, 5).map(({ rank, song, trend }) => (
-            <div key={song.id} className="flex items-center gap-3 rounded-xl px-3 py-2 hover:bg-white/5">
-              <span className="w-6 text-center text-lg font-bold text-white/60">{rank}</span>
-              <span className="w-4">
+            <div key={song.id} className="flex min-w-0 items-center gap-2 rounded-xl px-2 py-2 hover:bg-white/5 sm:gap-3 sm:px-3">
+              <span className="w-5 shrink-0 text-center text-base font-bold text-white/60 sm:w-6 sm:text-lg">{rank}</span>
+              <span className="w-4 shrink-0">
                 {trend === "up" && <ArrowUp size={14} className="text-green-400" />}
                 {trend === "down" && <ArrowDown size={14} className="text-red-400" />}
                 {trend === "same" && <Minus size={14} className="text-white/30" />}
               </span>
-              <SongCard song={song} onPlay={() => handlePlaySong(song.id)} />
+              <div className="min-w-0 flex-1">
+                <SongCard song={song} onPlay={() => handlePlaySong(song.id)} />
+              </div>
             </div>
           ))}
         </div>

@@ -5,6 +5,8 @@
   --foreground: #ffffff;
   --violet-accent: #7c3aed;
   --deep-blue: #1e1b4b;
+  --player-bar-height: 4.5rem;
+  --app-chrome-bottom: calc(var(--player-bar-height) + env(safe-area-inset-bottom, 0px));
 }
 
 @theme inline {
@@ -16,6 +18,11 @@
   --font-mono: var(--font-geist-mono);
 }
 
+html {
+  overflow-x: clip;
+  -webkit-text-size-adjust: 100%;
+}
+
 * {
   scrollbar-width: thin;
   scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
@@ -25,6 +32,7 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-sans), system-ui, sans-serif;
+  overflow-x: clip;
 }
 
 .scrollbar-hide {
@@ -34,6 +42,14 @@ body {
 
 .scrollbar-hide::-webkit-scrollbar {
   display: none;
+}
+
+.scroll-snap-x {
+  scroll-snap-type: x proximity;
+}
+
+.scroll-pl-safe {
+  scroll-padding-left: 1rem;
 }
 
 .glass {
@@ -51,6 +67,24 @@ body {
 
 .gradient-bg {
   background: linear-gradient(135deg, #1e1b4b 0%, #000000 50%, #1a0a2e 100%);
+}
+
+.pb-app {
+  padding-bottom: var(--app-chrome-bottom);
+}
+
+.chat-panel {
+  display: flex;
+  min-height: 0;
+  flex: 1;
+  flex-direction: column;
+  max-height: calc(100dvh - 12rem - var(--player-bar-height));
+}
+
+@media (min-width: 1024px) {
+  .chat-panel {
+    max-height: calc(100dvh - 10rem - var(--player-bar-height));
+  }
 }
 
 @keyframes pulse-glow {

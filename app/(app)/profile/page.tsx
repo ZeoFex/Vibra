@@ -66,29 +66,29 @@ export default function ProfilePage() {
         )}
       </div>
 
-      <div className="grid grid-cols-3 gap-4">
-        <div className="glass rounded-xl p-4 text-center">
-          <p className="text-2xl font-bold">{user.followers}</p>
+      <div className="grid grid-cols-3 gap-2 sm:gap-4">
+        <div className="glass rounded-xl p-3 text-center sm:p-4">
+          <p className="text-lg font-bold sm:text-2xl">{user.followers}</p>
           <p className="text-xs text-white/50">Followers</p>
         </div>
-        <div className="glass rounded-xl p-4 text-center">
-          <p className="text-2xl font-bold">{user.following}</p>
+        <div className="glass rounded-xl p-3 text-center sm:p-4">
+          <p className="text-lg font-bold sm:text-2xl">{user.following}</p>
           <p className="text-xs text-white/50">Following</p>
         </div>
-        <div className="glass rounded-xl p-4 text-center">
-          <p className="text-2xl font-bold capitalize">{user.tier}</p>
+        <div className="glass rounded-xl p-3 text-center sm:p-4">
+          <p className="text-lg font-bold capitalize sm:text-2xl">{user.tier}</p>
           <p className="text-xs text-white/50">Plan</p>
         </div>
       </div>
 
       {user.tier === "free" && (
-        <div className="glass flex items-center justify-between rounded-2xl p-6">
+        <div className="glass flex flex-col gap-4 rounded-2xl p-4 sm:flex-row sm:items-center sm:justify-between sm:p-6">
           <div>
             <p className="font-semibold">Upgrade to Premium</p>
             <p className="text-sm text-white/50">Unlock unlimited skips, hi-fi audio, and more</p>
           </div>
-          <Link href="/premium">
-            <Button variant="premium" size="sm">Upgrade</Button>
+          <Link href="/premium" className="shrink-0">
+            <Button variant="premium" size="sm" className="w-full sm:w-auto">Upgrade</Button>
           </Link>
         </div>
       )}

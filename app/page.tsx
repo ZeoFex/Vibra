@@ -43,19 +43,22 @@ export default function LandingPage() {
   return (
     <div className="min-h-screen bg-black text-white">
       {/* Nav */}
-      <nav className="fixed top-0 z-50 flex w-full items-center justify-between border-b border-white/5 bg-black/60 px-6 py-4 backdrop-blur-xl">
-        <div className="flex items-center gap-2">
-          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-violet-600 to-fuchsia-600">
-            <span className="text-lg font-bold">V</span>
+      <nav className="fixed top-0 z-50 flex w-full items-center justify-between gap-2 border-b border-white/5 bg-black/60 px-4 py-3 backdrop-blur-xl sm:px-6 sm:py-4">
+        <div className="flex min-w-0 items-center gap-2">
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-violet-600 to-fuchsia-600 sm:h-9 sm:w-9">
+            <span className="text-base font-bold sm:text-lg">V</span>
           </div>
-          <span className="text-xl font-bold">Vibra</span>
+          <span className="truncate text-lg font-bold sm:text-xl">Vibra</span>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex shrink-0 items-center gap-2 sm:gap-3">
           <Link href="/login">
-            <Button variant="ghost" size="sm">Log in</Button>
+            <Button variant="ghost" size="sm" className="px-3 sm:px-4">Log in</Button>
           </Link>
           <Link href="/signup">
-            <Button variant="default" size="sm">Sign up free</Button>
+            <Button variant="default" size="sm" className="px-3 sm:px-4">
+              <span className="hidden sm:inline">Sign up free</span>
+              <span className="sm:hidden">Sign up</span>
+            </Button>
           </Link>
         </div>
       </nav>
@@ -70,7 +73,7 @@ export default function LandingPage() {
           <p className="mb-4 text-sm font-medium uppercase tracking-widest text-violet-400">
             Feel Every Beat
           </p>
-          <h1 className="mb-6 text-5xl font-bold leading-tight md:text-7xl">
+          <h1 className="mb-6 text-4xl font-bold leading-tight sm:text-5xl md:text-7xl">
             Music that moves
             <br />
             <span className="gradient-text">with you</span>

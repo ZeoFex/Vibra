@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useEffect } from "react";
+import { useRef, useEffect, useState } from "react";
 import { Smile } from "lucide-react";
 import EmojiPickerReact, { Theme, EmojiStyle } from "emoji-picker-react";
 import type { EmojiClickData } from "emoji-picker-react";
@@ -15,6 +15,16 @@ interface EmojiPickerProps {
 
 export function EmojiPicker({ open, onSelect, onClose, className }: EmojiPickerProps) {
   const pickerRef = useRef<HTMLDivElement>(null);
+  const [pickerWidth, setPickerWidth] = useState(320);
+
+  useEffect(() => {
+    const updateWidth = () => {
+      setPickerWidth(Math.min(320, window.innerWidth - 32));
+    };
+    updateWidth();
+    window.addEventListener("resize", updateWidth);
+    return () => window.removeEventListener("resize", updateWidth);
+  }, []);
 
   useEffect(() => {
     if (!open) return;
@@ -37,7 +47,7 @@ export function EmojiPicker({ open, onSelect, onClose, className }: EmojiPickerP
     <div
       ref={pickerRef}
       className={cn(
-        "absolute bottom-full left-0 z-50 mb-2 overflow-hidden rounded-2xl border border-white/10 shadow-2xl shadow-black/50",
+        "absolute bottom-full left-0 z-50 mb-2 max-w-[calc(100vw-2rem)] overflow-hidden rounded-2xl border border-white/10 shadow-2xl shadow-black/50",
         className
       )}
     >
@@ -47,8 +57,8 @@ export function EmojiPicker({ open, onSelect, onClose, className }: EmojiPickerP
         emojiStyle={EmojiStyle.NATIVE}
         lazyLoadEmojis
         autoFocusSearch={false}
-        width={320}
-        height={400}
+        width={pickerWidth}
+        height={Math.min(400, window.innerHeight * 0.45)}
         searchPlaceHolder="Search all emojis..."
         previewConfig={{ showPreview: true }}
       />

@@ -265,6 +265,7 @@ export function usePlayer() {
 interface AuthContextValue {
   user: User | null;
   isAuthenticated: boolean;
+  isAuthReady: boolean;
   login: (email: string, password: string) => Promise<boolean>;
   signup: (name: string, email: string, password: string) => Promise<boolean>;
   logout: () => void;
@@ -276,10 +277,12 @@ const AuthContext = createContext<AuthContextValue | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
+  const [isAuthReady, setIsAuthReady] = useState(false);
 
   useEffect(() => {
     const stored = localStorage.getItem("vibra-user");
     if (stored) setUser(JSON.parse(stored));
+    setIsAuthReady(true);
   }, []);
 
   const login = useCallback(async (email: string, _password: string) => {
@@ -326,6 +329,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       value={{
         user,
         isAuthenticated: !!user,
+        isAuthReady,
         login,
         signup,
         logout,

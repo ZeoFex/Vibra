@@ -149,7 +149,7 @@ interface HorizontalScrollProps {
 
 export function HorizontalScroll({ children, className }: HorizontalScrollProps) {
   return (
-    <div className={cn("flex gap-4 overflow-x-auto pb-2 scrollbar-hide", className)}>
+    <div className={cn("flex gap-3 overflow-x-auto scroll-pl-safe pb-2 scrollbar-hide scroll-snap-x sm:gap-4 -mx-1 px-1 sm:-mx-0 sm:px-0", className)}>
       {children}
     </div>
   );

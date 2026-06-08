@@ -24,6 +24,7 @@ import {
   X,
   Search,
   ChevronDown,
+  UserPlus,
 } from "lucide-react";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
@@ -36,6 +37,7 @@ const navItems: { href: string; label: string; icon: React.ComponentType<{ size?
   { href: "/admin/music-review", label: "Music Review", icon: Music, permission: "music-review" },
   { href: "/admin/users", label: "Users", icon: Users, permission: "users" },
   { href: "/admin/artists", label: "Artists", icon: Mic2, permission: "artists" },
+  { href: "/admin/artist-accounts", label: "Artist Logins", icon: UserPlus, permission: "artist-accounts" },
   { href: "/admin/reports", label: "Reports", icon: Flag, permission: "reports" },
   { href: "/admin/support", label: "Support", icon: Headphones, permission: "support" },
   { href: "/admin/subscriptions", label: "Subscriptions", icon: CreditCard, permission: "subscriptions" },
@@ -56,6 +58,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const { admin, logout, isAuthenticated } = useAdmin();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
 
   if (!isAuthenticated) {
@@ -106,7 +109,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
             </div>
             <div>
               <p className="font-bold">Vibra Admin</p>
-              <p className="text-[10px] text-white/40">Control Center</p>
+              <p className="text-xs text-white/40">Control Center</p>
             </div>
           </div>
           <NavLinks />
@@ -130,7 +133,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
       {mobileOpen && (
         <div className="fixed inset-0 z-50 lg:hidden">
           <div className="absolute inset-0 bg-black/60" onClick={() => setMobileOpen(false)} />
-          <aside className="relative flex h-full w-72 flex-col bg-zinc-950 p-4">
+          <aside className="relative flex h-full w-[min(18rem,85vw)] flex-col bg-zinc-950 p-4">
             <button onClick={() => setMobileOpen(false)} className="absolute right-4 top-4"><X size={20} /></button>
             <div className="mb-6 mt-8 font-bold">Vibra Admin</div>
             <NavLinks />
@@ -138,47 +141,66 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
         </div>
       )}
 
-      <div className="flex flex-1 flex-col">
-        {/* Top bar */}
-        <header className="sticky top-0 z-40 flex items-center gap-4 border-b border-white/10 bg-zinc-950/80 px-4 py-3 backdrop-blur-xl md:px-6">
-          <button onClick={() => setMobileOpen(true)} className="rounded-lg p-2 hover:bg-white/10 lg:hidden">
-            <Menu size={20} />
-          </button>
-          <div className="relative hidden max-w-md flex-1 md:block">
-            <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-white/40" />
-            <input
-              placeholder="Search users, artists, songs..."
-              className="w-full rounded-lg border border-white/10 bg-white/5 py-2 pl-9 pr-4 text-sm placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-violet-500"
-            />
-          </div>
-          <div className="ml-auto relative">
-            <button
-              onClick={() => setProfileOpen(!profileOpen)}
-              className="flex items-center gap-2 rounded-lg px-2 py-1.5 hover:bg-white/10"
-            >
-              <Image src={admin!.avatar} alt="" width={28} height={28} className="rounded-full" />
-              <ChevronDown size={14} className="text-white/40" />
+      <div className="flex min-w-0 flex-1 flex-col">
+        <header className="sticky top-0 z-40 border-b border-white/10 bg-zinc-950/80 backdrop-blur-xl">
+          <div className="flex items-center gap-2 px-3 py-3 sm:gap-4 sm:px-4 md:px-6">
+            <button onClick={() => setMobileOpen(true)} className="rounded-lg p-2 hover:bg-white/10 lg:hidden" aria-label="Open menu">
+              <Menu size={20} />
             </button>
-            {profileOpen && (
-              <>
-                <div className="fixed inset-0" onClick={() => setProfileOpen(false)} />
-                <div className="absolute right-0 top-full mt-2 w-56 rounded-xl border border-white/10 bg-zinc-900 py-2 shadow-xl">
-                  <div className="border-b border-white/10 px-4 pb-3">
-                    <p className="font-medium">{admin!.name}</p>
-                    <p className="text-xs text-white/50">{admin!.email}</p>
-                    <p className="mt-1 text-xs text-violet-400">{ADMIN_ROLE_LABELS[admin!.role]}</p>
+            <button
+              onClick={() => setMobileSearchOpen((v) => !v)}
+              className="rounded-lg p-2 hover:bg-white/10 md:hidden"
+              aria-label="Toggle search"
+            >
+              <Search size={20} />
+            </button>
+            <div className="relative hidden max-w-md flex-1 md:block">
+              <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-white/40" />
+              <input
+                placeholder="Search users, artists, songs..."
+                className="w-full rounded-lg border border-white/10 bg-white/5 py-2 pl-9 pr-4 text-sm placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-violet-500"
+              />
+            </div>
+            <div className="relative ml-auto">
+              <button
+                onClick={() => setProfileOpen(!profileOpen)}
+                className="flex items-center gap-2 rounded-lg px-2 py-1.5 hover:bg-white/10"
+              >
+                <Image src={admin!.avatar} alt="" width={28} height={28} className="rounded-full" />
+                <ChevronDown size={14} className="text-white/40" />
+              </button>
+              {profileOpen && (
+                <>
+                  <div className="fixed inset-0" onClick={() => setProfileOpen(false)} />
+                  <div className="absolute right-0 top-full mt-2 w-56 rounded-xl border border-white/10 bg-zinc-900 py-2 shadow-xl">
+                    <div className="border-b border-white/10 px-4 pb-3">
+                      <p className="font-medium">{admin!.name}</p>
+                      <p className="text-xs text-white/50">{admin!.email}</p>
+                      <p className="mt-1 text-xs text-violet-400">{ADMIN_ROLE_LABELS[admin!.role]}</p>
+                    </div>
+                    <button onClick={logout} className="flex w-full items-center gap-2 px-4 py-2 text-sm text-white/60 hover:bg-white/5 hover:text-white">
+                      <LogOut size={16} />
+                      Sign out
+                    </button>
                   </div>
-                  <button onClick={logout} className="flex w-full items-center gap-2 px-4 py-2 text-sm text-white/60 hover:bg-white/5 hover:text-white">
-                    <LogOut size={16} />
-                    Sign out
-                  </button>
-                </div>
-              </>
-            )}
+                </>
+              )}
+            </div>
           </div>
+          {mobileSearchOpen && (
+            <div className="border-t border-white/10 px-3 pb-3 md:hidden">
+              <div className="relative">
+                <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-white/40" />
+                <input
+                  placeholder="Search users, artists, songs..."
+                  className="w-full rounded-lg border border-white/10 bg-white/5 py-2 pl-9 pr-4 text-sm placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-violet-500"
+                />
+              </div>
+            </div>
+          )}
         </header>
 
-        <main className="flex-1 overflow-y-auto p-4 md:p-8">{children}</main>
+        <main className="flex-1 overflow-x-hidden overflow-y-auto p-3 sm:p-4 md:p-8">{children}</main>
       </div>
     </div>
   );

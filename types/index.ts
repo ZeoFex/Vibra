@@ -90,6 +90,30 @@ export interface Song {
   audioUrl?: string;
 }
 
+export type ArtistUploadStatus = "draft" | "pending" | "published" | "rejected";
+
+export interface ArtistUpload {
+  id: string;
+  title: string;
+  artistName: string;
+  albumTitle: string;
+  genre: string;
+  about: string;
+  producers: string;
+  songwriters: string;
+  featuredArtists: string;
+  lyrics: string;
+  cover: string;
+  audioFileName: string;
+  duration: number;
+  releaseDate: string;
+  explicit: boolean;
+  copyrightConfirmed: boolean;
+  status: ArtistUploadStatus;
+  submittedAt: string;
+  uploadedBy: string;
+}
+
 export interface Playlist {
   id: string;
   title: string;

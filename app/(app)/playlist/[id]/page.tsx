@@ -63,9 +63,17 @@ export default function PlaylistPage({ params }: { params: Promise<{ id: string 
 
       <div className="space-y-1">
         {playlistSongs.map((song, i) => (
-          <div key={song.id} className="group grid grid-cols-1 items-center sm:grid-cols-[auto_1fr_auto]">
-            <SongCard song={song} index={i + 1} onPlay={() => play(song, playlistSongs)} />
-            <span className="hidden pr-3 text-sm text-white/40 sm:block">{formatDuration(song.duration)}</span>
+          <div
+            key={song.id}
+            className="group flex items-center gap-2 rounded-xl px-1 hover:bg-white/5 sm:grid sm:grid-cols-[2rem_1fr_auto] sm:gap-4 sm:px-3"
+          >
+            <span className="hidden w-6 text-center text-sm text-white/40 sm:block">{i + 1}</span>
+            <div className="min-w-0 flex-1">
+              <SongCard song={song} onPlay={() => play(song, playlistSongs)} />
+            </div>
+            <span className="shrink-0 pr-2 text-xs text-white/40 sm:pr-3 sm:text-sm">
+              {formatDuration(song.duration)}
+            </span>
           </div>
         ))}
       </div>

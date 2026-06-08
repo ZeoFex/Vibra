@@ -5,20 +5,24 @@ import { PlayerBar } from "@/components/layout/player-bar";
 import { useAuth } from "@/lib/contexts/app-context";
 import { SocialProvider } from "@/lib/contexts/social-context";
 import { ChatProvider } from "@/lib/contexts/chat-context";
-import { useRouter } from "next/navigation";
-import { useEffect } from "react";
+import { useRouter, usePathname } from "next/navigation";
+import { useEffect, useState } from "react";
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, isAuthReady } = useAuth();
   const router = useRouter();
+  const pathname = usePathname();
+  const [mobileOpen, setMobileOpen] = useState(false);
 
   useEffect(() => {
+    if (!isAuthReady) return;
     if (!isAuthenticated) {
-      router.push("/login");
+      const redirect = encodeURIComponent(pathname);
+      router.replace(`/login?redirect=${redirect}`);
     }
-  }, [isAuthenticated, router]);
+  }, [isAuthenticated, isAuthReady, pathname, router]);
 
-  if (!isAuthenticated) {
+  if (!isAuthReady || !isAuthenticated) {
     return (
       <div className="flex min-h-screen items-center justify-center gradient-bg">
         <div className="h-8 w-8 animate-spin rounded-full border-2 border-violet-500 border-t-transparent" />
@@ -29,11 +33,13 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   return (
     <SocialProvider>
       <ChatProvider>
-        <div className="flex min-h-screen gradient-bg">
-          <Sidebar />
-          <div className="flex flex-1 flex-col pb-24">
-            <TopBar />
-            <main className="flex-1 overflow-y-auto px-4 py-6 md:px-8">{children}</main>
+        <div className="flex min-h-screen min-h-dvh gradient-bg">
+          <Sidebar mobileOpen={mobileOpen} setMobileOpen={setMobileOpen} />
+          <div className="flex min-w-0 flex-1 flex-col pb-app">
+            <TopBar onMenuClick={() => setMobileOpen(true)} />
+            <main className="flex-1 overflow-x-hidden overflow-y-auto px-3 py-4 sm:px-4 sm:py-6 md:px-8">
+              {children}
+            </main>
           </div>
           <PlayerBar />
         </div>

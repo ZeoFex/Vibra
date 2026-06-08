@@ -2,6 +2,7 @@ export * from "./artists";
 export * from "./songs";
 export * from "./albums";
 export * from "./playlists";
+export * from "./artist-uploads";
 
 import type { Genre, MoodOption, Notification, ActivityItem, User, AdminStats } from "@/types";
 import { songs } from "./songs";
