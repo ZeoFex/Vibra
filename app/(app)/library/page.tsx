@@ -43,15 +43,15 @@ export default function LibraryPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Your Library</h1>
-        <Button variant="secondary" size="sm" className="gap-1">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <h1 className="text-xl font-bold sm:text-2xl">Your Library</h1>
+        <Button variant="secondary" size="sm" className="w-full gap-1 sm:w-auto">
           <Plus size={16} />
           Create Playlist
         </Button>
       </div>
 
-      <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
+      <div className="flex gap-2 overflow-x-auto scroll-pl-safe pb-2 scrollbar-hide scroll-snap-x -mx-1 px-1">
         {tabs.map(({ id, label, icon: Icon }) => (
           <button
             key={id}
@@ -118,16 +118,16 @@ export default function LibraryPage() {
       {activeTab === "downloads" && (
         <div className="space-y-6">
           {!isPremium && (
-            <div className="flex items-center justify-between rounded-xl border border-violet-600/30 bg-violet-600/10 p-4">
+            <div className="flex flex-col gap-4 rounded-xl border border-violet-600/30 bg-violet-600/10 p-4 sm:flex-row sm:items-center sm:justify-between">
               <div className="flex items-center gap-3">
-                <Crown size={20} className="text-violet-400" />
+                <Crown size={20} className="shrink-0 text-violet-400" />
                 <div>
                   <p className="font-medium">Offline downloads are a Premium feature</p>
                   <p className="text-sm text-white/50">Upgrade to download and listen offline</p>
                 </div>
               </div>
-              <Link href="/premium">
-                <Button variant="premium" size="sm">Upgrade</Button>
+              <Link href="/premium" className="shrink-0">
+                <Button variant="premium" size="sm" className="w-full sm:w-auto">Upgrade</Button>
               </Link>
             </div>
           )}

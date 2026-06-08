@@ -27,24 +27,24 @@ export default function ArtistPage({ params }: { params: Promise<{ id: string }>
 
   return (
     <div>
-      <div className="relative mb-8 h-64 overflow-hidden rounded-2xl md:h-80">
-        <Image src={artist.image} alt={artist.name} fill className="object-cover" />
+      <div className="relative mb-8 h-48 overflow-hidden rounded-2xl sm:h-64 md:h-80">
+        <Image src={artist.image} alt={artist.name} fill className="object-cover" sizes="(max-width: 768px) 100vw, 768px" />
         <div className="absolute inset-0 bg-gradient-to-t from-black via-black/50 to-transparent" />
-        <div className="absolute bottom-6 left-6 right-6">
+        <div className="absolute bottom-4 left-4 right-4 sm:bottom-6 sm:left-6 sm:right-6">
           {artist.verified && (
             <div className="mb-2 flex items-center gap-1 text-sm text-violet-400">
               <BadgeCheck size={16} />
               Verified Artist
             </div>
           )}
-          <h1 className="text-4xl font-bold md:text-6xl">{artist.name}</h1>
+          <h1 className="break-words text-2xl font-bold sm:text-4xl md:text-6xl">{artist.name}</h1>
           <p className="mt-2 text-sm text-white/60">
             {formatNumber(artist.monthlyListeners)} monthly listeners
           </p>
         </div>
       </div>
 
-      <div className="mb-8 flex items-center gap-3">
+      <div className="mb-8 flex flex-wrap items-center gap-2 sm:gap-3">
         <PlayButton
           size="lg"
           onClick={() => popularTracks[0] && play(popularTracks[0], artistSongs)}

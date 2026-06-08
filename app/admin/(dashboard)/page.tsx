@@ -22,11 +22,13 @@ export default function AdminOverviewPage() {
         description="Platform health, growth, and key metrics at a glance"
         actions={
           <>
-            <Link href="/admin/verification" className="rounded-lg bg-violet-600 px-4 py-2 text-sm font-medium hover:bg-violet-500">
-              {s.pendingApplications} Pending Applications
+            <Link href="/admin/verification" className="rounded-lg bg-violet-600 px-3 py-2 text-center text-sm font-medium hover:bg-violet-500 sm:px-4">
+              <span className="sm:hidden">{s.pendingApplications} Pending</span>
+              <span className="hidden sm:inline">{s.pendingApplications} Pending Applications</span>
             </Link>
-            <Link href="/admin/music-review" className="rounded-lg border border-white/10 px-4 py-2 text-sm hover:bg-white/5">
-              {s.pendingMusicReviews} Music Reviews
+            <Link href="/admin/music-review" className="rounded-lg border border-white/10 px-3 py-2 text-center text-sm hover:bg-white/5 sm:px-4">
+              <span className="sm:hidden">{s.pendingMusicReviews} Reviews</span>
+              <span className="hidden sm:inline">{s.pendingMusicReviews} Music Reviews</span>
             </Link>
           </>
         }

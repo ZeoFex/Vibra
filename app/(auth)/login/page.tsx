@@ -1,25 +1,34 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/lib/contexts/app-context";
+import { getSafeRedirect } from "@/lib/auth-redirect";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
-  const { login } = useAuth();
+  const { login, isAuthenticated, isAuthReady } = useAuth();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const redirectTo = getSafeRedirect(searchParams.get("redirect"));
+
+  useEffect(() => {
+    if (isAuthReady && isAuthenticated) {
+      router.replace(redirectTo);
+    }
+  }, [isAuthReady, isAuthenticated, redirectTo, router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     await login(email, password);
     setLoading(false);
-    router.push("/home");
+    router.push(redirectTo);
   };
 
   return (
@@ -79,10 +88,10 @@ export default function LoginPage() {
           </div>
 
           <div className="grid grid-cols-2 gap-3">
-            <Button type="button" variant="secondary" onClick={() => { login("google@vibra.app", ""); router.push("/home"); }}>
+            <Button type="button" variant="secondary" onClick={() => { login("google@vibra.app", ""); router.push(redirectTo); }}>
               Google
             </Button>
-            <Button type="button" variant="secondary" onClick={() => { login("apple@vibra.app", ""); router.push("/home"); }}>
+            <Button type="button" variant="secondary" onClick={() => { login("apple@vibra.app", ""); router.push(redirectTo); }}>
               Apple
             </Button>
           </div>

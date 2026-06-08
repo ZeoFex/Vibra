@@ -99,7 +99,7 @@ export default function AIPage() {
       </div>
 
       {/* Chat */}
-      <div className="flex min-h-[400px] flex-col rounded-2xl border border-white/10 bg-white/5">
+      <div className="flex min-h-[280px] flex-col rounded-2xl border border-white/10 bg-white/5 sm:min-h-[400px]">
         <div className="flex-1 space-y-4 overflow-y-auto p-4">
           {messages.map((msg, i) => (
             <div

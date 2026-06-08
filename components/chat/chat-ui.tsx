@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef } from "react";
+import { Send } from "lucide-react";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
 import type { ChatMessage } from "@/types";
@@ -63,7 +64,7 @@ export function MessageList({ messages, currentUserId, className }: MessageListP
               >
                 {msg.content}
               </div>
-              <p className={cn("mt-1 text-[10px] text-white/30", isOwn && "text-right")}>
+              <p className={cn("mt-1 text-xs text-white/30", isOwn && "text-right")}>
                 {formatTime(msg.createdAt)}
               </p>
             </div>
@@ -124,7 +125,7 @@ export function ChatInput({ onSend, placeholder = "Type a message...", disabled 
         onClose={() => setEmojiOpen(false)}
       />
 
-      <div className="flex gap-2">
+      <div className="flex min-w-0 gap-2">
         <EmojiToggleButton
           active={emojiOpen}
           onClick={() => setEmojiOpen((prev) => !prev)}
@@ -139,14 +140,16 @@ export function ChatInput({ onSend, placeholder = "Type a message...", disabled 
           placeholder={placeholder}
           disabled={disabled}
           autoComplete="off"
-          className="flex-1 rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm text-white placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-violet-500 disabled:opacity-50"
+          className="min-w-0 flex-1 rounded-xl border border-white/10 bg-white/5 px-3 py-2.5 text-sm text-white placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-violet-500 disabled:opacity-50 sm:px-4"
         />
         <button
           type="submit"
           disabled={disabled || !value.trim()}
-          className="rounded-xl bg-violet-600 px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-violet-500 disabled:opacity-50"
+          className="shrink-0 rounded-xl bg-violet-600 px-3 py-2.5 text-sm font-medium text-white transition-colors hover:bg-violet-500 disabled:opacity-50 sm:px-5"
+          aria-label="Send message"
         >
-          Send
+          <Send size={18} className="sm:hidden" />
+          <span className="hidden sm:inline">Send</span>
         </button>
       </div>
     </form>

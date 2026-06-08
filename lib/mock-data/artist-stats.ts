@@ -1,0 +1,40 @@
+import type { ArtistSongStats } from "@/types/artist";
+
+export const seedArtistStats: ArtistSongStats[] = [
+  {
+    uploadId: "upload-1",
+    artistId: "artist-acc-1",
+    title: "Accra Nights",
+    cover: "https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=400&h=400&fit=crop",
+    views: 48_200,
+    plays: 31_400,
+    downloads: 2_180,
+    likes: 4_920,
+    saves: 1_340,
+    updatedAt: "2026-06-07T08:00:00Z",
+  },
+  {
+    uploadId: "upload-2",
+    artistId: "artist-acc-2",
+    title: "Midnight Confessions",
+    cover: "https://images.unsplash.com/photo-1511379938545-c1f69419868d?w=400&h=400&fit=crop",
+    views: 36_800,
+    plays: 24_100,
+    downloads: 1_640,
+    likes: 3_710,
+    saves: 980,
+    updatedAt: "2026-06-07T08:00:00Z",
+  },
+  {
+    uploadId: "upload-3",
+    artistId: "artist-acc-1",
+    title: "Golden Hour Fade",
+    cover: "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=400&h=400&fit=crop",
+    views: 22_400,
+    plays: 14_600,
+    downloads: 890,
+    likes: 2_150,
+    saves: 620,
+    updatedAt: "2026-06-06T18:00:00Z",
+  },
+];

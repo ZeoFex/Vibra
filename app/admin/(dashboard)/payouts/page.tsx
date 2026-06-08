@@ -30,7 +30,7 @@ export default function PayoutsPage() {
       </div>
 
       <div className="overflow-x-auto rounded-xl border border-white/10">
-        <table className="w-full text-sm">
+        <table className="w-full min-w-[800px] text-sm">
           <thead>
             <tr className="border-b border-white/10 bg-white/[0.03] text-left text-white/50">
               <th className="p-4">Artist</th>

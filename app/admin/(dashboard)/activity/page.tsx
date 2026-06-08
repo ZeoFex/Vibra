@@ -18,7 +18,7 @@ export default function ActivityLogsPage() {
           2FA preparation · Login history · Full audit trail enabled
         </p>
         <div className="overflow-x-auto">
-          <table className="w-full text-sm">
+          <table className="w-full min-w-[640px] text-sm">
             <thead>
               <tr className="border-b border-white/10 text-left text-white/50">
                 <th className="p-3">Admin</th>

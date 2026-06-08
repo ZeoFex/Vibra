@@ -20,13 +20,8 @@ export default function SocialLayout({ children }: { children: React.ReactNode }
   const { totalUnreadMessages } = useChat();
 
   return (
-    <div className="mx-auto max-w-2xl space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold">Social</h1>
-        <p className="text-sm text-white/50">Connect with friends through music</p>
-      </div>
-
-      <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
+    <div className="mx-auto max-w-2xl space-y-4 sm:space-y-6">
+      <div className="flex gap-2 overflow-x-auto scroll-pl-safe pb-2 scrollbar-hide scroll-snap-x -mx-1 px-1">
         {tabs.map(({ href, label, exact }) => {
           const active = exact ? pathname === href : pathname.startsWith(href);
           return (

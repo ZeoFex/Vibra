@@ -2,10 +2,11 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/lib/contexts/app-context";
+import { getSafeRedirect } from "@/lib/auth-redirect";
 
 export default function SignupPage() {
   const [name, setName] = useState("");
@@ -14,13 +15,15 @@ export default function SignupPage() {
   const [loading, setLoading] = useState(false);
   const { signup } = useAuth();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const redirectTo = getSafeRedirect(searchParams.get("redirect"));
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     await signup(name, email, password);
     setLoading(false);
-    router.push("/home");
+    router.push(redirectTo);
   };
 
   return (
