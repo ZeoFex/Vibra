@@ -8,14 +8,15 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useArtistAuth } from "@/lib/contexts/artist-auth-context";
 import { getSafeRedirect } from "@/lib/auth-redirect";
-import { DEMO_ARTIST_PASSWORD } from "@/lib/mock-data/artist-accounts";
 
 function ArtistLoginForm() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [notice, setNotice] = useState("");
   const [loading, setLoading] = useState(false);
-  const { login, isAuthenticated, isAuthReady } = useArtistAuth();
+  const [resending, setResending] = useState(false);
+  const { login, resendVerification, isAuthenticated, isAuthReady } = useArtistAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirectTo = getSafeRedirect(searchParams.get("redirect") ?? "/artist/dashboard");
@@ -30,10 +31,30 @@ function ArtistLoginForm() {
     e.preventDefault();
     setLoading(true);
     setError("");
+    setNotice("");
     const result = await login(email, password);
     setLoading(false);
     if (result.ok) router.push(redirectTo);
     else setError(result.error ?? "Login failed");
+  };
+
+  const needsVerification = error.toLowerCase().includes("verify");
+
+  const handleResend = async () => {
+    if (!email.trim()) {
+      setError("Enter your email address first.");
+      return;
+    }
+    setResending(true);
+    setNotice("");
+    const result = await resendVerification(email);
+    setResending(false);
+    if (result.ok) {
+      setError("");
+      setNotice(result.message ?? "Verification email sent.");
+    } else {
+      setError(result.error ?? "Could not resend verification email.");
+    }
   };
 
   return (
@@ -50,9 +71,12 @@ function ArtistLoginForm() {
         {error && (
           <div className="rounded-lg bg-red-500/10 px-4 py-2 text-sm text-red-400">{error}</div>
         )}
+        {notice && (
+          <div className="rounded-lg bg-green-500/10 px-4 py-2 text-sm text-green-300">{notice}</div>
+        )}
         <div>
           <label className="mb-1.5 block text-sm text-white/70">Email</label>
-          <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="kofi.wave@vibra.artist" required />
+          <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@example.com" required />
         </div>
         <div>
           <label className="mb-1.5 block text-sm text-white/70">Password</label>
@@ -63,9 +87,14 @@ function ArtistLoginForm() {
           {loading ? "Signing in..." : "Sign in to Artist Portal"}
         </Button>
 
+        {needsVerification && (
+          <Button type="button" variant="secondary" className="w-full" onClick={handleResend} disabled={resending}>
+            {resending ? "Sending..." : "Resend verification email"}
+          </Button>
+        )}
+
         <p className="text-xs text-white/40">
-          Demo: <code className="text-white/50">kofi.wave@vibra.artist</code> /{" "}
-          <code className="text-white/50">{DEMO_ARTIST_PASSWORD}</code>
+          Register as an artist, verify your email, then sign in here.
         </p>
       </form>
 

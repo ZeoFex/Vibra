@@ -34,8 +34,9 @@ import {
 interface AdminContextValue {
   admin: AdminUser | null;
   isAuthenticated: boolean;
+  isAuthReady: boolean;
   login: (email: string, password: string) => Promise<{ ok: boolean; error?: string }>;
-  logout: () => void;
+  logout: () => Promise<void>;
   applications: ArtistApplication[];
   musicQueue: MusicReviewItem[];
   reports: ModerationReport[];
@@ -55,6 +56,7 @@ const AdminContext = createContext<AdminContextValue | null>(null);
 
 export function AdminProvider({ children }: { children: ReactNode }) {
   const [admin, setAdmin] = useState<AdminUser | null>(null);
+  const [isAuthReady, setIsAuthReady] = useState(false);
   const [applications, setApplications] = useState(initialApplications);
   const [musicQueue, setMusicQueue] = useState(initialMusicQueue);
   const [reports, setReports] = useState(initialReports);
@@ -62,10 +64,25 @@ export function AdminProvider({ children }: { children: ReactNode }) {
   const [activityLogs, setActivityLogs] = useState(initialLogs);
   const [payouts, setPayouts] = useState(initialPayouts);
 
-  useEffect(() => {
-    const stored = localStorage.getItem("vibra-admin");
-    if (stored) setAdmin(JSON.parse(stored));
+  const refreshSession = useCallback(async () => {
+    try {
+      const res = await fetch("/api/auth/admin/me", { credentials: "include" });
+      if (res.ok) {
+        const data = (await res.json()) as { admin: AdminUser };
+        setAdmin(data.admin);
+        return true;
+      }
+      setAdmin(null);
+      return false;
+    } catch {
+      setAdmin(null);
+      return false;
+    }
   }, []);
+
+  useEffect(() => {
+    refreshSession().finally(() => setIsAuthReady(true));
+  }, [refreshSession]);
 
   const logAction = useCallback(
     (action: string, target: string, targetType: string, reason?: string) => {
@@ -86,11 +103,11 @@ export function AdminProvider({ children }: { children: ReactNode }) {
   );
 
   const login = useCallback(async (email: string, password: string) => {
-    await new Promise((r) => setTimeout(r, 600));
     try {
-      const res = await fetch("/api/admin/login", {
+      const res = await fetch("/api/auth/admin/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify({ email, password }),
       });
       if (!res.ok) {
@@ -99,16 +116,15 @@ export function AdminProvider({ children }: { children: ReactNode }) {
       }
       const data = (await res.json()) as { admin: AdminUser };
       setAdmin(data.admin);
-      localStorage.setItem("vibra-admin", JSON.stringify(data.admin));
       return { ok: true };
     } catch {
       return { ok: false, error: "Unable to reach admin login service" };
     }
   }, []);
 
-  const logout = useCallback(() => {
+  const logout = useCallback(async () => {
+    await fetch("/api/auth/admin/logout", { method: "POST", credentials: "include" });
     setAdmin(null);
-    localStorage.removeItem("vibra-admin");
   }, []);
 
   const updateApplicationStatus = useCallback(
@@ -217,6 +233,7 @@ export function AdminProvider({ children }: { children: ReactNode }) {
       value={{
         admin,
         isAuthenticated: !!admin,
+        isAuthReady,
         login,
         logout,
         applications,

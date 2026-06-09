@@ -58,12 +58,13 @@ export default function AdminLoginPage() {
             {loading ? "Authenticating..." : "Sign in to Admin"}
           </Button>
 
-          <p className="mt-6 text-xs text-white/40">
-            Demo access requires <code className="text-white/50">VIBRA_ADMIN_DEMO_PASSWORD</code> in{" "}
-           </p>
         </form>
 
-        <p className="mt-6 text-center text-sm text-white/40">
+        <p className="mt-6 text-center text-sm text-white/50">
+          First time setup?{" "}
+          <Link href="/admin/register" className="text-violet-400 hover:underline">Create super admin</Link>
+        </p>
+        <p className="mt-2 text-center text-sm text-white/40">
           <Link href="/home" className="text-violet-400 hover:underline">← Back to Vibra</Link>
         </p>
       </div>

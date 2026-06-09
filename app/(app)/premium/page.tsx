@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { Check, Crown, Sparkles, Download, SkipForward, Volume2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/lib/contexts/app-context";
@@ -23,7 +24,21 @@ const premiumFeatures = [
 
 export default function PremiumPage() {
   const { user, upgradeToPremium } = useAuth();
+  const [upgrading, setUpgrading] = useState(false);
+  const [message, setMessage] = useState("");
   const isPremium = user?.tier === "premium";
+
+  const handleUpgrade = async () => {
+    setUpgrading(true);
+    setMessage("");
+    const result = await upgradeToPremium();
+    setUpgrading(false);
+    if (result.ok) {
+      setMessage("Premium activated! Payment integration coming soon.");
+    } else {
+      setMessage(result.error ?? "Upgrade failed");
+    }
+  };
 
   return (
     <div className="mx-auto max-w-4xl space-y-10">
@@ -76,15 +91,19 @@ export default function PremiumPage() {
               Active
             </Button>
           ) : (
-            <Button variant="premium" className="mt-8 w-full" onClick={upgradeToPremium}>
-              Start 30-Day Free Trial
+            <Button variant="premium" className="mt-8 w-full" onClick={handleUpgrade} disabled={upgrading}>
+              {upgrading ? "Activating..." : "Activate Premium (no payment yet)"}
             </Button>
           )}
         </div>
       </div>
 
+      {message && (
+        <p className="text-center text-sm text-violet-300">{message}</p>
+      )}
+
       <p className="text-center text-xs text-white/40">
-        Cancel anytime. No commitment required. Prices in USD.
+        Payment integration coming soon. Cancel anytime. Prices in USD.
       </p>
     </div>
   );

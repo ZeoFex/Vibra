@@ -57,7 +57,9 @@ export function ArtistUploadForm({ onSuccess }: ArtistUploadFormProps) {
     if (file) update("cover", URL.createObjectURL(file));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const [submitting, setSubmitting] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!artist) return;
 
@@ -69,8 +71,16 @@ export function ArtistUploadForm({ onSuccess }: ArtistUploadFormProps) {
     if (!form.audioFileName) return setError("Please select an audio file.");
     if (!form.copyrightConfirmed) return setError("You must confirm copyright ownership.");
 
-    const upload = submitUpload(form, artist.id);
-    recordNewUploadStats(upload.id, artist.id, upload.title, upload.cover);
+    setSubmitting(true);
+    const result = await submitUpload(form);
+    setSubmitting(false);
+
+    if (!result.ok || !result.upload) {
+      setError(result.error ?? "Upload failed");
+      return;
+    }
+
+    recordNewUploadStats(result.upload.id, artist.id, result.upload.title, result.upload.cover);
     setForm({ ...emptyForm, artistName: artist.stageName });
     setSubmitted(true);
     onSuccess?.();
@@ -230,9 +240,9 @@ export function ArtistUploadForm({ onSuccess }: ArtistUploadFormProps) {
           </div>
         </section>
 
-        <Button type="submit" size="lg" className="w-full gap-2">
+        <Button type="submit" size="lg" className="w-full gap-2" disabled={submitting}>
           <Upload size={18} />
-          Upload & Publish Song
+          {submitting ? "Uploading..." : "Upload & Publish Song"}
         </Button>
       </form>
     </div>

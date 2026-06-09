@@ -162,7 +162,7 @@ export const ADMIN_ROLE_LABELS: Record<AdminRole, string> = {
 };
 
 export const ROLE_PERMISSIONS: Record<AdminRole, string[]> = {
-  super_admin: ["*"],
+  super_admin: ["*", "sub-admins"],
   content_manager: ["overview", "music-review", "playlists", "featured", "reports", "activity"],
   verification_manager: ["overview", "verification", "artists", "artist-accounts", "activity"],
   support_admin: ["overview", "support", "reports", "users", "activity"],

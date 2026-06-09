@@ -77,7 +77,7 @@ export function ArtistShell({ children }: { children: React.ReactNode }) {
           Listener App
         </Link>
         <button
-          onClick={() => { logout(); router.push("/artist/login"); }}
+          onClick={() => { void logout().then(() => router.push("/artist/login")); }}
           className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-sm text-white/60 hover:bg-white/5 hover:text-white"
         >
           <LogOut size={18} />

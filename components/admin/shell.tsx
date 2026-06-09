@@ -37,7 +37,7 @@ const navItems: { href: string; label: string; icon: React.ComponentType<{ size?
   { href: "/admin/music-review", label: "Music Review", icon: Music, permission: "music-review" },
   { href: "/admin/users", label: "Users", icon: Users, permission: "users" },
   { href: "/admin/artists", label: "Artists", icon: Mic2, permission: "artists" },
-  { href: "/admin/artist-accounts", label: "Artist Logins", icon: UserPlus, permission: "artist-accounts" },
+  { href: "/admin/artist-accounts", label: "Reviewers", icon: UserPlus, permission: "sub-admins" },
   { href: "/admin/reports", label: "Reports", icon: Flag, permission: "reports" },
   { href: "/admin/support", label: "Support", icon: Headphones, permission: "support" },
   { href: "/admin/subscriptions", label: "Subscriptions", icon: CreditCard, permission: "subscriptions" },
@@ -56,10 +56,18 @@ function filterNav(role: AdminRole) {
 export function AdminShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
-  const { admin, logout, isAuthenticated } = useAdmin();
+  const { admin, logout, isAuthenticated, isAuthReady } = useAdmin();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
+
+  if (!isAuthReady) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-zinc-950">
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-violet-500 border-t-transparent" />
+      </div>
+    );
+  }
 
   if (!isAuthenticated) {
     router.replace("/admin/login");
@@ -121,7 +129,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
                 <p className="truncate text-xs text-violet-400">{ADMIN_ROLE_LABELS[admin!.role]}</p>
               </div>
             </div>
-            <button onClick={logout} className="mt-2 flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-white/50 hover:bg-white/5 hover:text-white">
+            <button onClick={() => { void logout().then(() => router.push("/admin/login")); }} className="mt-2 flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-white/50 hover:bg-white/5 hover:text-white">
               <LogOut size={16} />
               Sign out
             </button>
@@ -178,7 +186,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
                       <p className="text-xs text-white/50">{admin!.email}</p>
                       <p className="mt-1 text-xs text-violet-400">{ADMIN_ROLE_LABELS[admin!.role]}</p>
                     </div>
-                    <button onClick={logout} className="flex w-full items-center gap-2 px-4 py-2 text-sm text-white/60 hover:bg-white/5 hover:text-white">
+                    <button onClick={() => { void logout().then(() => router.push("/admin/login")); }} className="flex w-full items-center gap-2 px-4 py-2 text-sm text-white/60 hover:bg-white/5 hover:text-white">
                       <LogOut size={16} />
                       Sign out
                     </button>
