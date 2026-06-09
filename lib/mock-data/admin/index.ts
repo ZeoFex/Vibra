@@ -17,7 +17,7 @@ export const adminUsers: AdminUser[] = [
   {
     id: "admin-1",
     name: "Jordan Blake",
-    email: "jordan@vibra.app",
+    email: "admin@vibra.app",
     avatar: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop",
     role: "super_admin",
     lastLogin: "2026-06-06T09:00:00Z",
@@ -25,7 +25,7 @@ export const adminUsers: AdminUser[] = [
   {
     id: "admin-2",
     name: "Priya Sharma",
-    email: "priya@vibra.app",
+    email: "verify@vibra.app",
     avatar: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100&h=100&fit=crop",
     role: "verification_manager",
     lastLogin: "2026-06-05T14:30:00Z",

@@ -34,6 +34,7 @@ import {
 interface AdminContextValue {
   admin: AdminUser | null;
   isAuthenticated: boolean;
+  isAuthReady: boolean;
   login: (email: string, password: string) => Promise<{ ok: boolean; error?: string }>;
   logout: () => void;
   applications: ArtistApplication[];
@@ -55,6 +56,7 @@ const AdminContext = createContext<AdminContextValue | null>(null);
 
 export function AdminProvider({ children }: { children: ReactNode }) {
   const [admin, setAdmin] = useState<AdminUser | null>(null);
+  const [isAuthReady, setIsAuthReady] = useState(false);
   const [applications, setApplications] = useState(initialApplications);
   const [musicQueue, setMusicQueue] = useState(initialMusicQueue);
   const [reports, setReports] = useState(initialReports);
@@ -64,7 +66,14 @@ export function AdminProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     const stored = localStorage.getItem("vibra-admin");
-    if (stored) setAdmin(JSON.parse(stored));
+    if (stored) {
+      try {
+        setAdmin(JSON.parse(stored));
+      } catch {
+        localStorage.removeItem("vibra-admin");
+      }
+    }
+    setIsAuthReady(true);
   }, []);
 
   const logAction = useCallback(
@@ -217,6 +226,7 @@ export function AdminProvider({ children }: { children: ReactNode }) {
       value={{
         admin,
         isAuthenticated: !!admin,
+        isAuthReady,
         login,
         logout,
         applications,

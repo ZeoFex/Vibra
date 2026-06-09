@@ -25,7 +25,7 @@ import {
   Search,
   ChevronDown,
 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
 import { useAdmin } from "@/lib/contexts/admin-context";
 import { hasPermission, ADMIN_ROLE_LABELS, type AdminRole } from "@/types/admin";
@@ -54,12 +54,17 @@ function filterNav(role: AdminRole) {
 export function AdminShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
-  const { admin, logout, isAuthenticated } = useAdmin();
+  const { admin, logout, isAuthenticated, isAuthReady } = useAdmin();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
 
-  if (!isAuthenticated) {
-    router.replace("/admin/login");
+  useEffect(() => {
+    if (isAuthReady && !isAuthenticated) {
+      router.replace("/admin/login");
+    }
+  }, [isAuthReady, isAuthenticated, router]);
+
+  if (!isAuthReady || !isAuthenticated) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-zinc-950">
         <div className="h-8 w-8 animate-spin rounded-full border-2 border-violet-500 border-t-transparent" />

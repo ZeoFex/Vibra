@@ -58,11 +58,18 @@ export default function AdminLoginPage() {
             {loading ? "Authenticating..." : "Sign in to Admin"}
           </Button>
 
-          <p className="mt-6 text-xs text-white/40">
-            Use a demo admin email with the password set in{" "}
-            <code className="text-white/50">.env.local</code> as{" "}
-            <code className="text-white/50">VIBRA_ADMIN_DEMO_PASSWORD</code>.
-          </p>
+          <div className="mt-6 space-y-2 text-xs text-white/40">
+            <p>
+              Use a demo admin email with the password set in{" "}
+              <code className="text-white/50">.env.local</code> as{" "}
+              <code className="text-white/50">VIBRA_ADMIN_DEMO_PASSWORD</code>.
+            </p>
+            <p>
+              Demo emails:{" "}
+              <code className="text-white/50">admin@vibra.app</code> (Super Admin),{" "}
+              <code className="text-white/50">verify@vibra.app</code> (Verification Manager).
+            </p>
+          </div>
         </form>
 
         <p className="mt-6 text-center text-sm text-white/40">
