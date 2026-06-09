@@ -14,6 +14,7 @@ import {
   VolumeX,
   Heart,
   ListMusic,
+  X,
 } from "lucide-react";
 import { useState } from "react";
 import { usePlayer } from "@/lib/contexts/app-context";
@@ -36,20 +37,15 @@ export function PlayerBar() {
     seek,
     toggleLikeSong,
     isSongLiked,
+    isPlayerBarVisible,
+    closePlayer,
   } = usePlayer();
 
   const [showQueue, setShowQueue] = useState(false);
   const [muted, setMuted] = useState(false);
 
-  if (!currentSong) {
-    return (
-      <div
-        className="fixed bottom-0 left-0 right-0 z-50 border-t border-white/10 bg-black/80 px-4 py-3 backdrop-blur-xl"
-        style={{ paddingBottom: "max(0.75rem, env(safe-area-inset-bottom))" }}
-      >
-        <p className="text-center text-sm text-white/40">Select a song to start playing</p>
-      </div>
-    );
+  if (!isPlayerBarVisible || !currentSong) {
+    return null;
   }
 
   const progressPercent = (progress / currentSong.duration) * 100;
@@ -184,6 +180,13 @@ export function PlayerBar() {
               className="h-1 w-16 cursor-pointer appearance-none rounded-full bg-white/20 accent-violet-500 lg:w-20"
             />
           </div>
+          <button
+            onClick={closePlayer}
+            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-white/50 transition-colors hover:bg-white/10 hover:text-white"
+            aria-label="Close player"
+          >
+            <X size={18} />
+          </button>
         </div>
       </div>
     </div>

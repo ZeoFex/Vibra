@@ -10,7 +10,6 @@ import {
   type ReactNode,
 } from "react";
 import type { Song, DownloadedTrack } from "@/types";
-import { currentUser as mockUser } from "@/lib/mock-data";
 import type { User } from "@/types";
 
 type RepeatMode = "off" | "all" | "one";
@@ -18,6 +17,7 @@ type RepeatMode = "off" | "all" | "one";
 interface PlayerState {
   currentSong: Song | null;
   queue: Song[];
+  isPlayerBarVisible: boolean;
   isPlaying: boolean;
   shuffle: boolean;
   repeat: RepeatMode;
@@ -50,6 +50,7 @@ interface PlayerContextValue extends PlayerState {
   removeDownload: (songId: string) => void;
   isDownloaded: (songId: string) => boolean;
   downloadedSongIds: string[];
+  closePlayer: () => void;
 }
 
 const PlayerContext = createContext<PlayerContextValue | null>(null);
@@ -58,6 +59,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<PlayerState>({
     currentSong: null,
     queue: [],
+    isPlayerBarVisible: false,
     isPlaying: false,
     shuffle: false,
     repeat: "off",
@@ -93,8 +95,19 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       ...prev,
       currentSong: song,
       queue: queue ?? prev.queue.length ? prev.queue : [song],
+      isPlayerBarVisible: true,
       isPlaying: true,
       progress: 0,
+    }));
+  }, []);
+
+  const closePlayer = useCallback(() => {
+    setState((prev) => ({
+      ...prev,
+      currentSong: null,
+      isPlaying: false,
+      progress: 0,
+      isPlayerBarVisible: false,
     }));
   }, []);
 
@@ -249,6 +262,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
         removeDownload,
         isDownloaded,
         downloadedSongIds,
+        closePlayer,
       }}
     >
       {children}
@@ -262,15 +276,20 @@ export function usePlayer() {
   return ctx;
 }
 
+interface AuthResult {
+  ok: boolean;
+  error?: string;
+}
+
 interface AuthContextValue {
   user: User | null;
   isAuthenticated: boolean;
   isAuthReady: boolean;
-  login: (email: string, password: string) => Promise<boolean>;
-  signup: (name: string, email: string, password: string) => Promise<boolean>;
-  logout: () => void;
+  login: (email: string, password: string) => Promise<AuthResult>;
+  signup: (name: string, email: string, password: string, avatarUrl: string) => Promise<AuthResult>;
+  logout: () => Promise<void>;
   updateProfile: (updates: Partial<User>) => void;
-  upgradeToPremium: () => void;
+  upgradeToPremium: () => Promise<AuthResult>;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -280,48 +299,72 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isAuthReady, setIsAuthReady] = useState(false);
 
   useEffect(() => {
-    const stored = localStorage.getItem("vibra-user");
-    if (stored) setUser(JSON.parse(stored));
-    setIsAuthReady(true);
+    fetch("/api/auth/me", { credentials: "include" })
+      .then(async (res) => {
+        if (res.ok) {
+          const data = (await res.json()) as { user: User };
+          setUser(data.user);
+        }
+      })
+      .finally(() => setIsAuthReady(true));
   }, []);
 
-  const login = useCallback(async (email: string, _password: string) => {
-    await new Promise((r) => setTimeout(r, 800));
-    const u = { ...mockUser, email };
-    setUser(u);
-    localStorage.setItem("vibra-user", JSON.stringify(u));
-    return true;
+  const login = useCallback(async (email: string, password: string): Promise<AuthResult> => {
+    try {
+      const res = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ email, password }),
+      });
+      const data = (await res.json()) as { user?: User; error?: string };
+      if (!res.ok) return { ok: false, error: data.error ?? "Invalid credentials" };
+      setUser(data.user!);
+      return { ok: true };
+    } catch {
+      return { ok: false, error: "Unable to reach login service" };
+    }
   }, []);
 
-  const signup = useCallback(async (name: string, email: string, _password: string) => {
-    await new Promise((r) => setTimeout(r, 800));
-    const u = { ...mockUser, name, email };
-    setUser(u);
-    localStorage.setItem("vibra-user", JSON.stringify(u));
-    return true;
+  const signup = useCallback(async (name: string, email: string, password: string, avatarUrl: string): Promise<AuthResult> => {
+    try {
+      const res = await fetch("/api/auth/signup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ name, email, password, avatarUrl }),
+      });
+      const data = (await res.json()) as { user?: User; error?: string };
+      if (!res.ok) return { ok: false, error: data.error ?? "Signup failed" };
+      setUser(data.user!);
+      return { ok: true };
+    } catch {
+      return { ok: false, error: "Unable to reach signup service" };
+    }
   }, []);
 
-  const logout = useCallback(() => {
+  const logout = useCallback(async () => {
+    await fetch("/api/auth/logout", { method: "POST", credentials: "include" });
     setUser(null);
-    localStorage.removeItem("vibra-user");
   }, []);
 
   const updateProfile = useCallback((updates: Partial<User>) => {
-    setUser((prev) => {
-      if (!prev) return prev;
-      const updated = { ...prev, ...updates };
-      localStorage.setItem("vibra-user", JSON.stringify(updated));
-      return updated;
-    });
+    setUser((prev) => (prev ? { ...prev, ...updates } : prev));
   }, []);
 
-  const upgradeToPremium = useCallback(() => {
-    setUser((prev) => {
-      if (!prev) return prev;
-      const updated = { ...prev, tier: "premium" as const };
-      localStorage.setItem("vibra-user", JSON.stringify(updated));
-      return updated;
-    });
+  const upgradeToPremium = useCallback(async (): Promise<AuthResult> => {
+    try {
+      const res = await fetch("/api/auth/upgrade-premium", {
+        method: "POST",
+        credentials: "include",
+      });
+      const data = (await res.json()) as { user?: User; error?: string };
+      if (!res.ok) return { ok: false, error: data.error ?? "Upgrade failed" };
+      setUser(data.user!);
+      return { ok: true };
+    } catch {
+      return { ok: false, error: "Unable to upgrade account" };
+    }
   }, []);
 
   return (

@@ -11,19 +11,10 @@ import {
 } from "react";
 import type { ArtistAccount, ArtistDashboardSummary, ArtistSongStats } from "@/types/artist";
 import {
-  loadArtistAccounts,
-  findAccountByEmail,
-  addArtistAccount,
-  updateArtistAccount,
-} from "@/lib/artist-accounts-storage";
-import {
   loadArtistStats,
   getStatsForArtist,
   addStatsForUpload,
 } from "@/lib/artist-stats-storage";
-import { seedArtistAccounts } from "@/lib/mock-data/artist-accounts";
-
-const SESSION_KEY = "vibra-artist-session";
 
 interface RegisterInput {
   email: string;
@@ -33,30 +24,25 @@ interface RegisterInput {
   genre: string;
   country: string;
   bio?: string;
-}
-
-interface CreateAccountInput {
-  email: string;
-  password: string;
-  stageName: string;
-  legalName: string;
-  genre: string;
-  country: string;
-  bio?: string;
-  image?: string;
+  imageUrl: string;
 }
 
 interface ArtistAuthContextValue {
   artist: ArtistAccount | null;
   isAuthenticated: boolean;
   isAuthReady: boolean;
-  accounts: ArtistAccount[];
   login: (email: string, password: string) => Promise<{ ok: boolean; error?: string }>;
-  register: (input: RegisterInput) => Promise<{ ok: boolean; error?: string }>;
-  logout: () => void;
+  register: (input: RegisterInput) => Promise<{
+    ok: boolean;
+    error?: string;
+    message?: string;
+    pendingVerification?: boolean;
+    resent?: boolean;
+    verifyUrl?: string;
+  }>;
+  resendVerification: (email: string) => Promise<{ ok: boolean; error?: string; message?: string }>;
+  logout: () => Promise<void>;
   updateProfile: (updates: Partial<ArtistAccount>) => void;
-  createAccountAsAdmin: (input: CreateAccountInput) => ArtistAccount;
-  updateAccountStatus: (id: string, status: ArtistAccount["status"]) => void;
   getDashboardSummary: (artistId: string) => ArtistDashboardSummary;
   getArtistStats: (artistId: string) => ArtistSongStats[];
   recordNewUploadStats: (uploadId: string, artistId: string, title: string, cover: string) => void;
@@ -78,114 +64,88 @@ function buildSummary(stats: ArtistSongStats[]): ArtistDashboardSummary {
 
 export function ArtistAuthProvider({ children }: { children: ReactNode }) {
   const [artist, setArtist] = useState<ArtistAccount | null>(null);
-  const [accounts, setAccounts] = useState<ArtistAccount[]>(seedArtistAccounts);
   const [stats, setStats] = useState<ReturnType<typeof loadArtistStats>>([]);
   const [isAuthReady, setIsAuthReady] = useState(false);
 
   useEffect(() => {
-    const loadedAccounts = loadArtistAccounts();
-    setAccounts(loadedAccounts);
     setStats(loadArtistStats());
-
-    const sessionId = localStorage.getItem(SESSION_KEY);
-    if (sessionId) {
-      const match = loadedAccounts.find((a) => a.id === sessionId && a.status === "active");
-      if (match) setArtist(match);
-    }
-    setIsAuthReady(true);
+    fetch("/api/auth/artist/me", { credentials: "include" })
+      .then(async (res) => {
+        if (res.ok) {
+          const data = (await res.json()) as { artist: ArtistAccount };
+          setArtist(data.artist);
+        }
+      })
+      .finally(() => setIsAuthReady(true));
   }, []);
 
   const login = useCallback(async (email: string, password: string) => {
-    await new Promise((r) => setTimeout(r, 600));
-    const account = findAccountByEmail(email);
-    if (!account || account.password !== password) {
-      return { ok: false, error: "Invalid email or password." };
+    try {
+      const res = await fetch("/api/auth/artist/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ email, password }),
+      });
+      const data = (await res.json()) as { artist?: ArtistAccount; error?: string };
+      if (!res.ok) return { ok: false, error: data.error ?? "Login failed" };
+      setArtist(data.artist!);
+      return { ok: true };
+    } catch {
+      return { ok: false, error: "Unable to reach artist login service" };
     }
-    if (account.status === "pending") {
-      return {
-        ok: false,
-        error: "Your account is pending admin approval. Please wait for activation.",
-      };
-    }
-    if (account.status === "suspended") {
-      return { ok: false, error: "This account has been suspended. Contact support." };
-    }
-    setArtist(account);
-    localStorage.setItem(SESSION_KEY, account.id);
-    return { ok: true };
   }, []);
 
   const register = useCallback(async (input: RegisterInput) => {
-    await new Promise((r) => setTimeout(r, 800));
-    if (findAccountByEmail(input.email)) {
-      return { ok: false, error: "An account with this email already exists." };
+    try {
+      const res = await fetch("/api/auth/artist/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(input),
+      });
+      const data = (await res.json()) as {
+        message?: string;
+        error?: string;
+        pendingVerification?: boolean;
+        resent?: boolean;
+        verifyUrl?: string;
+      };
+      if (!res.ok) return { ok: false, error: data.error ?? "Registration failed" };
+      return {
+        ok: true,
+        message: data.message,
+        pendingVerification: data.pendingVerification,
+        resent: data.resent,
+        verifyUrl: data.verifyUrl,
+      };
+    } catch {
+      return { ok: false, error: "Unable to reach registration service" };
     }
-    const account: ArtistAccount = {
-      id: `artist-acc-${Date.now()}`,
-      email: input.email,
-      password: input.password,
-      stageName: input.stageName,
-      legalName: input.legalName,
-      image: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=200&h=200&fit=crop",
-      bio: input.bio ?? "",
-      genre: input.genre,
-      country: input.country,
-      status: "pending",
-      createdAt: new Date().toISOString(),
-      createdBy: "self",
-    };
-    addArtistAccount(account);
-    setAccounts(loadArtistAccounts());
-    return {
-      ok: true,
-      error: undefined,
-    };
   }, []);
 
-  const logout = useCallback(() => {
+  const resendVerification = useCallback(async (email: string) => {
+    try {
+      const res = await fetch("/api/auth/artist/resend-verification", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      });
+      const data = (await res.json()) as { message?: string; error?: string };
+      if (!res.ok) return { ok: false, error: data.error ?? "Could not resend verification email" };
+      return { ok: true, message: data.message };
+    } catch {
+      return { ok: false, error: "Unable to reach verification service" };
+    }
+  }, []);
+
+  const logout = useCallback(async () => {
+    await fetch("/api/auth/artist/logout", { method: "POST", credentials: "include" });
     setArtist(null);
-    localStorage.removeItem(SESSION_KEY);
   }, []);
 
   const updateProfile = useCallback((updates: Partial<ArtistAccount>) => {
-    if (!artist) return;
-    const updated = updateArtistAccount(artist.id, updates);
-    if (updated) {
-      setArtist(updated);
-      setAccounts(loadArtistAccounts());
-    }
-  }, [artist]);
-
-  const createAccountAsAdmin = useCallback((input: CreateAccountInput) => {
-    const account: ArtistAccount = {
-      id: `artist-acc-${Date.now()}`,
-      email: input.email,
-      password: input.password,
-      stageName: input.stageName,
-      legalName: input.legalName,
-      image:
-        input.image ??
-        "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&h=200&fit=crop",
-      bio: input.bio ?? "",
-      genre: input.genre,
-      country: input.country,
-      status: "active",
-      createdAt: new Date().toISOString(),
-      createdBy: "admin",
-    };
-    addArtistAccount(account);
-    setAccounts(loadArtistAccounts());
-    return account;
+    setArtist((prev) => (prev ? { ...prev, ...updates } : prev));
   }, []);
-
-  const updateAccountStatus = useCallback((id: string, status: ArtistAccount["status"]) => {
-    updateArtistAccount(id, { status });
-    setAccounts(loadArtistAccounts());
-    if (artist?.id === id && status !== "active") {
-      setArtist(null);
-      localStorage.removeItem(SESSION_KEY);
-    }
-  }, [artist]);
 
   const getArtistStats = useCallback(
     (artistId: string) => getStatsForArtist(artistId),
@@ -210,13 +170,11 @@ export function ArtistAuthProvider({ children }: { children: ReactNode }) {
       artist,
       isAuthenticated: !!artist,
       isAuthReady,
-      accounts,
       login,
       register,
+      resendVerification,
       logout,
       updateProfile,
-      createAccountAsAdmin,
-      updateAccountStatus,
       getDashboardSummary,
       getArtistStats,
       recordNewUploadStats,
@@ -224,13 +182,11 @@ export function ArtistAuthProvider({ children }: { children: ReactNode }) {
     [
       artist,
       isAuthReady,
-      accounts,
       login,
       register,
+      resendVerification,
       logout,
       updateProfile,
-      createAccountAsAdmin,
-      updateAccountStatus,
       getDashboardSummary,
       getArtistStats,
       recordNewUploadStats,
