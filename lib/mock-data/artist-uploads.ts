@@ -75,15 +75,4 @@ export const coverPresets = [
   "https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=400&h=400&fit=crop",
 ];
 
-export const genreOptions = [
-  "Afrobeats",
-  "Electronic",
-  "Hip-Hop",
-  "R&B",
-  "Indie",
-  "Pop",
-  "Rock",
-  "House",
-  "Lo-Fi",
-  "Ambient",
-];
+export { genreOptions } from "@/lib/constants/genres";

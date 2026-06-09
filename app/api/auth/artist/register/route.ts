@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { hashPassword } from "@/lib/auth/password";
+import { getPasswordValidationError } from "@/lib/auth/password-requirements";
 import { generateVerifyToken, getAppUrl, sendVerificationEmail } from "@/lib/email";
 import { jsonError, jsonOk, parseBody } from "@/lib/api-utils";
 
@@ -27,8 +28,9 @@ export async function POST(request: Request) {
     return jsonError("All required fields must be filled, including profile picture");
   }
 
-  if (body.password.length < 8) {
-    return jsonError("Password must be at least 8 characters");
+  const passwordError = getPasswordValidationError(body.password);
+  if (passwordError) {
+    return jsonError(passwordError);
   }
 
   const email = body.email.trim().toLowerCase();

@@ -7,10 +7,14 @@ import { Mic2, UserPlus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { SelectField } from "@/components/ui/select-field";
 import { ProfilePicturePicker } from "@/components/auth/profile-picture-picker";
+import { PasswordField } from "@/components/auth/password-field";
 import { useArtistAuth } from "@/lib/contexts/artist-auth-context";
 import { uploadProfilePicture } from "@/lib/client/upload-avatar";
-import { genreOptions } from "@/lib/mock-data/artist-uploads";
+import { genreOptions } from "@/lib/constants/genres";
+import { countryOptions } from "@/lib/constants/countries";
+import { isPasswordValid } from "@/lib/auth/password-requirements";
 
 export default function ArtistRegisterPage() {
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
@@ -35,6 +39,14 @@ export default function ArtistRegisterPage() {
     e.preventDefault();
     if (!avatarFile) {
       setError("Please add a profile picture.");
+      return;
+    }
+    if (!form.country) {
+      setError("Please select your country.");
+      return;
+    }
+    if (!isPasswordValid(form.password)) {
+      setError("Please meet all password requirements before registering.");
       return;
     }
 
@@ -108,39 +120,57 @@ export default function ArtistRegisterPage() {
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="sm:col-span-2">
               <label className="mb-1.5 block text-sm text-white/70">Email *</label>
-              <Input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} required />
+              <Input
+                type="email"
+                value={form.email}
+                onChange={(e) => setForm({ ...form, email: e.target.value })}
+                required
+              />
             </div>
             <div className="sm:col-span-2">
-              <label className="mb-1.5 block text-sm text-white/70">Password *</label>
-              <Input type="password" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} required minLength={8} />
+              <PasswordField
+                value={form.password}
+                onChange={(password) => setForm({ ...form, password })}
+              />
             </div>
             <div>
               <label className="mb-1.5 block text-sm text-white/70">Stage Name *</label>
-              <Input value={form.stageName} onChange={(e) => setForm({ ...form, stageName: e.target.value })} required />
+              <Input
+                value={form.stageName}
+                onChange={(e) => setForm({ ...form, stageName: e.target.value })}
+                required
+              />
             </div>
             <div>
               <label className="mb-1.5 block text-sm text-white/70">Legal Name *</label>
-              <Input value={form.legalName} onChange={(e) => setForm({ ...form, legalName: e.target.value })} required />
+              <Input
+                value={form.legalName}
+                onChange={(e) => setForm({ ...form, legalName: e.target.value })}
+                required
+              />
             </div>
-            <div>
-              <label className="mb-1.5 block text-sm text-white/70">Genre *</label>
-              <select
-                value={form.genre}
-                onChange={(e) => setForm({ ...form, genre: e.target.value })}
-                className="flex h-11 w-full rounded-xl border border-white/10 bg-white/5 px-4 text-sm text-white"
-              >
-                {genreOptions.map((g) => (
-                  <option key={g} value={g} className="bg-zinc-900">{g}</option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label className="mb-1.5 block text-sm text-white/70">Country *</label>
-              <Input value={form.country} onChange={(e) => setForm({ ...form, country: e.target.value })} required />
-            </div>
+            <SelectField
+              label="Genre"
+              value={form.genre}
+              onChange={(genre) => setForm({ ...form, genre })}
+              options={genreOptions}
+              required
+            />
+            <SelectField
+              label="Country"
+              value={form.country}
+              onChange={(country) => setForm({ ...form, country })}
+              options={countryOptions}
+              required
+              placeholder="Select your country"
+            />
             <div className="sm:col-span-2">
               <label className="mb-1.5 block text-sm text-white/70">Bio</label>
-              <Textarea value={form.bio} onChange={(e) => setForm({ ...form, bio: e.target.value })} rows={3} />
+              <Textarea
+                value={form.bio}
+                onChange={(e) => setForm({ ...form, bio: e.target.value })}
+                rows={3}
+              />
             </div>
           </div>
           <Button type="submit" className="w-full gap-2" disabled={loading}>
@@ -154,7 +184,9 @@ export default function ArtistRegisterPage() {
         </p>
         <p className="mt-2 text-center text-sm text-white/50">
           Already have an account?{" "}
-          <Link href="/artist/login" className="text-violet-400 hover:underline">Sign in</Link>
+          <Link href="/artist/login" className="text-violet-400 hover:underline">
+            Sign in
+          </Link>
         </p>
       </div>
     </div>
