@@ -6,7 +6,10 @@ import { Save } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { SelectField } from "@/components/ui/select-field";
 import { useArtistAuth } from "@/lib/contexts/artist-auth-context";
+import { genreOptions } from "@/lib/constants/genres";
+import { countryOptions } from "@/lib/constants/countries";
 
 export default function ArtistProfilePage() {
   const { artist, updateProfile } = useArtistAuth();
@@ -14,7 +17,7 @@ export default function ArtistProfilePage() {
     stageName: artist?.stageName ?? "",
     legalName: artist?.legalName ?? "",
     bio: artist?.bio ?? "",
-    genre: artist?.genre ?? "",
+    genre: artist?.genre ?? "Pop",
     country: artist?.country ?? "",
   });
   const [saved, setSaved] = useState(false);
@@ -52,14 +55,19 @@ export default function ArtistProfilePage() {
           <Input value={form.legalName} onChange={(e) => setForm({ ...form, legalName: e.target.value })} />
         </div>
         <div className="grid gap-4 sm:grid-cols-2">
-          <div>
-            <label className="mb-1.5 block text-xs text-white/50">Genre</label>
-            <Input value={form.genre} onChange={(e) => setForm({ ...form, genre: e.target.value })} />
-          </div>
-          <div>
-            <label className="mb-1.5 block text-xs text-white/50">Country</label>
-            <Input value={form.country} onChange={(e) => setForm({ ...form, country: e.target.value })} />
-          </div>
+          <SelectField
+            label="Genre"
+            value={form.genre}
+            onChange={(genre) => setForm({ ...form, genre })}
+            options={genreOptions}
+          />
+          <SelectField
+            label="Country"
+            value={form.country}
+            onChange={(country) => setForm({ ...form, country })}
+            options={countryOptions}
+            placeholder="Select your country"
+          />
         </div>
         <div>
           <label className="mb-1.5 block text-xs text-white/50">Bio</label>

@@ -1,16 +1,30 @@
 "use client";
 
 import Image from "next/image";
-import { Eye, Play, Download, Heart, Users, TrendingUp, Music } from "lucide-react";
+import { Eye, Play, Download, Heart, Users, TrendingUp, Music, MessageCircle, Star } from "lucide-react";
 import { useArtistAuth } from "@/lib/contexts/artist-auth-context";
+import { useArtistUploads } from "@/lib/contexts/artist-upload-context";
+import { getCommentsForArtist } from "@/lib/mock-data/song-comments";
 import { formatNumber } from "@/lib/utils";
+
+function formatCommentDate(iso: string) {
+  return new Date(iso).toLocaleDateString(undefined, {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
+}
 
 export default function ArtistDashboardPage() {
   const { artist, getDashboardSummary, getArtistStats } = useArtistAuth();
+  const { uploads } = useArtistUploads();
+
   if (!artist) return null;
 
   const summary = getDashboardSummary(artist.id);
   const stats = getArtistStats(artist.id);
+  const uploadIds = uploads.map((u) => u.id);
+  const comments = getCommentsForArtist(artist.id, uploadIds.length > 0 ? uploadIds : stats.map((s) => s.uploadId));
 
   const cards = [
     { label: "Total Views", value: formatNumber(summary.totalViews), icon: Eye, color: "text-blue-400" },
@@ -26,7 +40,13 @@ export default function ArtistDashboardPage() {
       <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-violet-600/30 to-fuchsia-600/20 p-6 md:p-8">
         <div className="absolute right-0 top-0 h-40 w-40 rounded-full bg-violet-500/20 blur-3xl" />
         <div className="relative flex flex-col items-start gap-4 sm:flex-row sm:items-center">
-          <Image src={artist.image} alt={artist.stageName} width={72} height={72} className="shrink-0 rounded-full ring-4 ring-violet-600/30" />
+          <Image
+            src={artist.image}
+            alt={artist.stageName}
+            width={72}
+            height={72}
+            className="shrink-0 rounded-full ring-4 ring-violet-600/30"
+          />
           <div>
             <h1 className="text-2xl font-bold md:text-3xl">Welcome, {artist.stageName}</h1>
             <p className="mt-1 text-white/60">
@@ -58,17 +78,78 @@ export default function ArtistDashboardPage() {
         ) : (
           <div className="space-y-3">
             {stats.map((song) => (
-              <div key={song.uploadId} className="flex items-center gap-4 rounded-xl border border-white/10 bg-white/[0.03] p-4">
+              <div
+                key={song.uploadId}
+                className="flex items-center gap-4 rounded-xl border border-white/10 bg-white/[0.03] p-4"
+              >
                 <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-lg">
                   <Image src={song.cover} alt={song.title} fill className="object-cover" sizes="56px" />
                 </div>
                 <div className="min-w-0 flex-1">
                   <p className="truncate font-medium">{song.title}</p>
                   <div className="mt-2 grid grid-cols-2 gap-2 text-xs text-white/50 sm:grid-cols-4">
-                    <span className="flex items-center gap-1"><Eye size={12} /> {formatNumber(song.views)} views</span>
-                    <span className="flex items-center gap-1"><Play size={12} /> {formatNumber(song.plays)} plays</span>
-                    <span className="flex items-center gap-1"><Download size={12} /> {formatNumber(song.downloads)} downloads</span>
-                    <span className="flex items-center gap-1"><Heart size={12} /> {formatNumber(song.likes)} likes</span>
+                    <span className="flex items-center gap-1">
+                      <Eye size={12} /> {formatNumber(song.views)} views
+                    </span>
+                    <span className="flex items-center gap-1">
+                      <Play size={12} /> {formatNumber(song.plays)} plays
+                    </span>
+                    <span className="flex items-center gap-1">
+                      <Download size={12} /> {formatNumber(song.downloads)} downloads
+                    </span>
+                    <span className="flex items-center gap-1">
+                      <Heart size={12} /> {formatNumber(song.likes)} likes
+                    </span>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </section>
+
+      <section>
+        <div className="mb-4 flex items-center gap-2">
+          <MessageCircle size={22} className="text-violet-400" />
+          <h2 className="text-xl font-bold">Listener Comments</h2>
+        </div>
+        {comments.length === 0 ? (
+          <div className="rounded-xl border border-white/10 bg-white/[0.03] p-8 text-center text-white/50">
+            <MessageCircle size={32} className="mx-auto mb-3 opacity-40" />
+            No comments yet. Once listeners engage with your songs, their feedback will appear here.
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {comments.map((comment) => (
+              <div
+                key={comment.id}
+                className="rounded-xl border border-white/10 bg-white/[0.03] p-4"
+              >
+                <div className="flex items-start gap-3">
+                  <Image
+                    src={comment.listenerAvatar}
+                    alt={comment.listenerName}
+                    width={40}
+                    height={40}
+                    className="shrink-0 rounded-full"
+                  />
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <p className="font-medium">{comment.listenerName}</p>
+                      <span className="text-xs text-white/40">on</span>
+                      <p className="text-sm text-violet-300">{comment.songTitle}</p>
+                      <span className="text-xs text-white/40">{formatCommentDate(comment.createdAt)}</span>
+                    </div>
+                    <div className="mt-1 flex items-center gap-0.5">
+                      {Array.from({ length: 5 }).map((_, i) => (
+                        <Star
+                          key={i}
+                          size={12}
+                          className={i < comment.rating ? "fill-amber-400 text-amber-400" : "text-white/20"}
+                        />
+                      ))}
+                    </div>
+                    <p className="mt-2 text-sm text-white/70">{comment.comment}</p>
                   </div>
                 </div>
               </div>
