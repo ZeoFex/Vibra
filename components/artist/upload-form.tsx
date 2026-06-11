@@ -6,8 +6,10 @@ import { Upload, Music, FileText, Users, Shield, CheckCircle2, Plus, Trash2, Dis
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { AudioPreview } from "@/components/artist/audio-preview";
 import { useArtistUploads } from "@/lib/contexts/artist-upload-context";
 import { useArtistAuth } from "@/lib/contexts/artist-auth-context";
+import { getAudioDurationFromFile } from "@/lib/audio/resolve-audio-url";
 import { coverPresets } from "@/lib/mock-data/artist-uploads";
 import { genreOptions } from "@/lib/constants/genres";
 import {
@@ -25,6 +27,9 @@ interface TrackDraft {
   lyrics: string;
   cover: string;
   audioFileName: string;
+  audioFile: File | null;
+  audioPreviewUrl: string;
+  duration: number;
   explicit: boolean;
   about: string;
 }
@@ -38,6 +43,9 @@ function createEmptyTrack(cover = coverPresets[0]): TrackDraft {
     lyrics: "",
     cover,
     audioFileName: "",
+    audioFile: null,
+    audioPreviewUrl: "",
+    duration: 0,
     explicit: false,
     about: "",
   };
@@ -104,9 +112,27 @@ export function ArtistUploadForm({ onSuccess }: ArtistUploadFormProps) {
     if (file) setProjectCover(URL.createObjectURL(file));
   };
 
-  const handleAudioSelect = (index: number, e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleAudioSelect = async (index: number, e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) updateTrack(index, "audioFileName", file.name);
+    if (!file) return;
+
+    const duration = await getAudioDurationFromFile(file);
+    const previewUrl = URL.createObjectURL(file);
+
+    setTracks((prev) =>
+      prev.map((track, i) => {
+        if (i !== index) return track;
+        if (track.audioPreviewUrl) URL.revokeObjectURL(track.audioPreviewUrl);
+        return {
+          ...track,
+          audioFileName: file.name,
+          audioFile: file,
+          audioPreviewUrl: previewUrl,
+          duration,
+        };
+      })
+    );
+    setError("");
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -126,7 +152,7 @@ export function ArtistUploadForm({ onSuccess }: ArtistUploadFormProps) {
       const label = config.allowsMultipleTracks ? `Track ${i + 1}` : "Track";
       if (!track.title.trim()) return setError(`${label}: song title is required.`);
       if (!track.producers.trim()) return setError(`${label}: producer details are required.`);
-      if (!track.audioFileName) return setError(`${label}: please select an audio file.`);
+      if (!track.audioFile || !track.audioFileName) return setError(`${label}: please select an audio file.`);
     }
 
     if (!copyrightConfirmed) return setError("You must confirm copyright ownership.");
@@ -154,6 +180,8 @@ export function ArtistUploadForm({ onSuccess }: ArtistUploadFormProps) {
         lyrics: track.lyrics.trim(),
         cover: track.cover || projectCover,
         audioFileName: track.audioFileName,
+        audioFile: track.audioFile ?? undefined,
+        duration: track.duration || undefined,
         releaseDate,
         explicit: track.explicit,
         copyrightConfirmed: true,
@@ -444,6 +472,14 @@ export function ArtistUploadForm({ onSuccess }: ArtistUploadFormProps) {
                         onChange={(e) => handleAudioSelect(index, e)}
                       />
                     </label>
+                    {track.audioPreviewUrl && (
+                      <AudioPreview
+                        src={track.audioPreviewUrl}
+                        fileName={track.audioFileName}
+                        duration={track.duration}
+                        className="mt-3"
+                      />
+                    )}
                   </div>
                 </div>
 

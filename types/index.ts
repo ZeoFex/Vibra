@@ -109,6 +109,7 @@ export interface ArtistUpload {
   lyrics: string;
   cover: string;
   audioFileName: string;
+  audioUrl?: string;
   duration: number;
   releaseDate: string;
   explicit: boolean;

@@ -1,6 +1,14 @@
 import { prisma } from "@/lib/prisma";
 import { requireArtistSession } from "@/lib/auth/session";
-import { jsonError, jsonOk, parseBody } from "@/lib/api-utils";
+import { jsonError, jsonOk } from "@/lib/api-utils";
+import {
+  ALLOWED_AUDIO_MIME_TYPES,
+  MAX_AUDIO_BYTES,
+  getUploadAudioPath,
+  normalizeAudioMimeType,
+} from "@/lib/audio/constants";
+
+export const runtime = "nodejs";
 
 function serializeUpload(upload: {
   id: string;
@@ -25,6 +33,7 @@ function serializeUpload(upload: {
   copyrightConfirmed: boolean;
   status: string;
   submittedAt: Date;
+  audio?: { uploadId: string } | null;
 }) {
   return {
     id: upload.id,
@@ -42,6 +51,7 @@ function serializeUpload(upload: {
     lyrics: upload.lyrics ?? "",
     cover: upload.coverUrl,
     audioFileName: upload.audioFileName,
+    audioUrl: upload.audio ? getUploadAudioPath(upload.id) : undefined,
     duration: upload.duration,
     releaseDate: upload.releaseDate.toISOString().slice(0, 10),
     explicit: upload.explicit,
@@ -52,6 +62,16 @@ function serializeUpload(upload: {
   };
 }
 
+function parseBoolean(value: FormDataEntryValue | null): boolean {
+  return value === "true" || value === "1" || value === "on";
+}
+
+function parseOptionalInt(value: FormDataEntryValue | null): number | undefined {
+  if (value == null || value === "") return undefined;
+  const parsed = Number.parseInt(String(value), 10);
+  return Number.isFinite(parsed) ? parsed : undefined;
+}
+
 export async function GET() {
   const artist = await requireArtistSession();
   if (!artist) return jsonError("Unauthorized", 401);
@@ -59,6 +79,11 @@ export async function GET() {
   const uploads = await prisma.artistUpload.findMany({
     where: { artistId: artist.id },
     orderBy: { submittedAt: "desc" },
+    include: {
+      audio: {
+        select: { uploadId: true },
+      },
+    },
   });
 
   return jsonOk({ uploads: uploads.map(serializeUpload) });
@@ -72,57 +97,80 @@ export async function POST(request: Request) {
     return jsonError("Your artist account must be verified and active to upload", 403);
   }
 
-  const body = await parseBody<{
-    title?: string;
-    artistName?: string;
-    albumTitle?: string;
-    releaseType?: string;
-    albumGroupId?: string;
-    trackNumber?: number;
-    genre?: string;
-    about?: string;
-    producers?: string;
-    songwriters?: string;
-    featuredArtists?: string;
-    lyrics?: string;
-    cover?: string;
-    audioFileName?: string;
-    duration?: number;
-    releaseDate?: string;
-    explicit?: boolean;
-    copyrightConfirmed?: boolean;
-  }>(request);
+  const formData = await request.formData();
+  const audioFile = formData.get("audio");
 
-  if (!body?.title?.trim() || !body?.albumTitle?.trim() || !body?.producers?.trim() || !body?.audioFileName) {
+  if (!(audioFile instanceof File) || audioFile.size === 0) {
+    return jsonError("A valid audio file is required");
+  }
+
+  if (audioFile.size > MAX_AUDIO_BYTES) {
+    return jsonError("Audio file exceeds the 50 MB limit");
+  }
+
+  const mimeType = normalizeAudioMimeType(audioFile);
+  if (!ALLOWED_AUDIO_MIME_TYPES.has(mimeType) && !/\.(mp3|wav|flac|m4a|aac|ogg)$/i.test(audioFile.name)) {
+    return jsonError("Unsupported audio format. Use MP3, WAV, FLAC, M4A, AAC, or OGG");
+  }
+
+  const title = String(formData.get("title") ?? "").trim();
+  const albumTitle = String(formData.get("albumTitle") ?? "").trim();
+  const producers = String(formData.get("producers") ?? "").trim();
+  const audioFileName = String(formData.get("audioFileName") ?? audioFile.name).trim();
+
+  if (!title || !albumTitle || !producers || !audioFileName) {
     return jsonError("Missing required upload fields");
   }
 
-  if (!body.copyrightConfirmed) {
+  if (!parseBoolean(formData.get("copyrightConfirmed"))) {
     return jsonError("You must confirm copyright ownership");
   }
+
+  const durationRaw = Number.parseInt(String(formData.get("duration") ?? "180"), 10);
+  const duration = Number.isFinite(durationRaw) && durationRaw > 0 ? durationRaw : 180;
+  const releaseDateRaw = String(formData.get("releaseDate") ?? "");
+  const releaseDate = releaseDateRaw ? new Date(releaseDateRaw) : new Date();
+  const trackNumber = parseOptionalInt(formData.get("trackNumber"));
+
+  const audioBuffer = Buffer.from(await audioFile.arrayBuffer());
 
   const upload = await prisma.artistUpload.create({
     data: {
       artistId: artist.id,
-      title: body.title.trim(),
-      artistName: (body.artistName ?? artist.stageName).trim(),
-      albumTitle: body.albumTitle.trim(),
-      releaseType: body.releaseType?.trim(),
-      albumGroupId: body.albumGroupId?.trim(),
-      trackNumber: body.trackNumber,
-      genre: body.genre ?? artist.genre,
-      about: body.about?.trim(),
-      producers: body.producers.trim(),
-      songwriters: body.songwriters?.trim(),
-      featuredArtists: body.featuredArtists?.trim(),
-      lyrics: body.lyrics?.trim() || null,
-      coverUrl: body.cover ?? "https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=400&h=400&fit=crop",
-      audioFileName: body.audioFileName,
-      duration: body.duration ?? 180,
-      releaseDate: body.releaseDate ? new Date(body.releaseDate) : new Date(),
-      explicit: body.explicit ?? false,
+      title,
+      artistName: String(formData.get("artistName") ?? artist.stageName).trim(),
+      albumTitle,
+      releaseType: String(formData.get("releaseType") ?? "").trim() || null,
+      albumGroupId: String(formData.get("albumGroupId") ?? "").trim() || null,
+      trackNumber,
+      genre: String(formData.get("genre") ?? artist.genre).trim(),
+      about: String(formData.get("about") ?? "").trim() || null,
+      producers,
+      songwriters: String(formData.get("songwriters") ?? "").trim() || null,
+      featuredArtists: String(formData.get("featuredArtists") ?? "").trim() || null,
+      lyrics: String(formData.get("lyrics") ?? "").trim() || null,
+      coverUrl:
+        String(formData.get("cover") ?? "").trim() ||
+        "https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=400&h=400&fit=crop",
+      audioFileName,
+      duration,
+      releaseDate,
+      explicit: parseBoolean(formData.get("explicit")),
       copyrightConfirmed: true,
       status: "published",
+      audio: {
+        create: {
+          data: audioBuffer,
+          mimeType,
+          sizeBytes: audioBuffer.length,
+          storage: "database",
+        },
+      },
+    },
+    include: {
+      audio: {
+        select: { uploadId: true },
+      },
     },
   });
 

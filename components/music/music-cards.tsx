@@ -36,7 +36,25 @@ interface SongCardProps {
 
 export function SongCard({ song, onPlay, showArtist = true, index }: SongCardProps) {
   return (
-    <div className="group flex items-center gap-4 rounded-xl px-3 py-2 transition-colors hover:bg-white/5">
+    <div
+      className={cn(
+        "group flex items-center gap-4 rounded-xl px-3 py-2 transition-colors hover:bg-white/5",
+        onPlay && "cursor-pointer"
+      )}
+      onClick={onPlay ? () => onPlay(song) : undefined}
+      role={onPlay ? "button" : undefined}
+      tabIndex={onPlay ? 0 : undefined}
+      onKeyDown={
+        onPlay
+          ? (e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                onPlay(song);
+              }
+            }
+          : undefined
+      }
+    >
       {index !== undefined && (
         <span className="w-6 text-center text-sm text-white/40">{index}</span>
       )}
@@ -44,7 +62,11 @@ export function SongCard({ song, onPlay, showArtist = true, index }: SongCardPro
         <Image src={song.cover} alt={song.title} fill className="object-cover" />
         {onPlay && (
           <button
-            onClick={() => onPlay(song)}
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              onPlay(song);
+            }}
             className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 transition-opacity group-hover:opacity-100"
           >
             <Play size={18} fill="white" className="text-white" />
@@ -54,7 +76,11 @@ export function SongCard({ song, onPlay, showArtist = true, index }: SongCardPro
       <div className="min-w-0 flex-1">
         <p className="truncate text-sm font-medium text-white">{song.title}</p>
         {showArtist && (
-          <Link href={`/artist/${song.artistId}`} className="truncate text-xs text-white/50 hover:underline">
+          <Link
+            href={`/artist/${song.artistId}`}
+            onClick={(e) => e.stopPropagation()}
+            className="truncate text-xs text-white/50 hover:underline"
+          >
             {song.artistName}
           </Link>
         )}

@@ -1,5 +1,6 @@
 import type { ArtistUpload, Song } from "@/types";
 import { buildAlbumsAndSingles, uploadToSong, type UploadAlbumSource } from "@/lib/album-utils";
+import { getUploadAudioPath } from "@/lib/audio/constants";
 
 function toUploadSource(upload: ArtistUpload): UploadAlbumSource {
   return {
@@ -22,7 +23,7 @@ export function uploadToSongFromArtistUpload(upload: ArtistUpload): Song {
   return {
     ...song,
     duration: upload.duration,
-    audioUrl: upload.audioFileName,
+    audioUrl: upload.audioUrl ?? getUploadAudioPath(upload.id),
   };
 }
 

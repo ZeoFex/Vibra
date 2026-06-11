@@ -14,11 +14,12 @@ import { getSongById as getStaticSongById, songs as staticSongs } from "@/lib/mo
 import { getAlbumById as getStaticAlbumById } from "@/lib/mock-data/albums";
 import { getSongsForAlbum } from "@/lib/album-utils";
 import { uploadToSongFromArtistUpload } from "@/lib/artist-upload-utils";
+import { getDemoAudioUrl } from "@/lib/audio/demo-tracks";
 
 type SubmitUploadInput = Omit<
   ArtistUpload,
   "id" | "status" | "submittedAt" | "uploadedBy" | "duration"
-> & { duration?: number };
+> & { duration?: number; audioFile?: File };
 
 interface ArtistUploadContextValue {
   uploads: ArtistUpload[];
@@ -90,7 +91,14 @@ export function ArtistUploadProvider({ children }: { children: ReactNode }) {
     (id: string) => {
       const published = publishedSongs.find((s) => s.id === id);
       if (published) return published;
-      return getStaticSongById(id);
+      const staticSong = getStaticSongById(id);
+      if (staticSong) {
+        return {
+          ...staticSong,
+          audioUrl: staticSong.audioUrl ?? getDemoAudioUrl(staticSong.id),
+        };
+      }
+      return undefined;
     },
     [publishedSongs]
   );
@@ -116,15 +124,41 @@ export function ArtistUploadProvider({ children }: { children: ReactNode }) {
 
   const submitUpload = useCallback(
     async (input: SubmitUploadInput) => {
+      const { audioFile, ...payload } = input;
+      if (!audioFile) {
+        return { ok: false, error: "Audio file is required" };
+      }
+
       try {
+        const formData = new FormData();
+        formData.append("audio", audioFile);
+        formData.append("title", payload.title);
+        formData.append("artistName", payload.artistName);
+        formData.append("albumTitle", payload.albumTitle);
+        if (payload.releaseType) formData.append("releaseType", payload.releaseType);
+        if (payload.albumGroupId) formData.append("albumGroupId", payload.albumGroupId);
+        if (payload.trackNumber != null) formData.append("trackNumber", String(payload.trackNumber));
+        formData.append("genre", payload.genre);
+        formData.append("about", payload.about);
+        formData.append("producers", payload.producers);
+        formData.append("songwriters", payload.songwriters);
+        formData.append("featuredArtists", payload.featuredArtists);
+        formData.append("lyrics", payload.lyrics);
+        formData.append("cover", payload.cover);
+        formData.append("audioFileName", payload.audioFileName);
+        formData.append("releaseDate", payload.releaseDate);
+        formData.append("explicit", String(payload.explicit));
+        formData.append("copyrightConfirmed", String(payload.copyrightConfirmed));
+        if (payload.duration) formData.append("duration", String(payload.duration));
+
         const res = await fetch("/api/artist/uploads", {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
           credentials: "include",
-          body: JSON.stringify(input),
+          body: formData,
         });
         const data = (await res.json()) as { upload?: ArtistUpload; error?: string };
         if (!res.ok) return { ok: false, error: data.error ?? "Upload failed" };
+
         setUploads((prev) => [data.upload!, ...prev]);
         await refreshPublished();
         return { ok: true, upload: data.upload };
