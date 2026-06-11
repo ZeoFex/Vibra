@@ -1,5 +1,9 @@
-import "dotenv/config";
-import { defineConfig } from "prisma/config";
+import { config } from "dotenv";
+import { defineConfig, env } from "prisma/config";
+
+// Next.js uses .env.local; Prisma CLI only auto-loads .env unless we load it explicitly.
+config({ path: ".env" });
+config({ path: ".env.local", override: true });
 
 export default defineConfig({
   schema: "prisma/schema.prisma",
@@ -7,6 +11,6 @@ export default defineConfig({
     path: "prisma/migrations",
   },
   datasource: {
-    url: process.env["DATABASE_URL"],
+    url: env("DATABASE_URL"),
   },
 });
