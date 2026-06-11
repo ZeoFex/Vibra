@@ -1,27 +1,38 @@
 import { prisma } from "@/lib/prisma";
 import { jsonOk } from "@/lib/api-utils";
+import { buildAlbumsAndSingles } from "@/lib/album-utils";
 
 export async function GET() {
   const uploads = await prisma.artistUpload.findMany({
     where: { status: "published" },
-    orderBy: { submittedAt: "desc" },
-    take: 50,
+    orderBy: [{ albumGroupId: "asc" }, { trackNumber: "asc" }, { submittedAt: "desc" }],
+    take: 200,
   });
 
-  const songs = uploads.map((u) => ({
+  const sources = uploads.map((u) => ({
     id: u.id,
-    title: u.title,
     artistId: u.artistId,
     artistName: u.artistName,
-    albumId: `album-${u.id}`,
     albumTitle: u.albumTitle,
-    cover: u.coverUrl,
-    duration: u.duration,
+    releaseType: u.releaseType,
+    albumGroupId: u.albumGroupId,
+    trackNumber: u.trackNumber,
     genre: u.genre,
-    plays: 0,
+    cover: u.coverUrl,
     releaseDate: u.releaseDate.toISOString().slice(0, 10),
-    audioUrl: u.audioFileName,
+    title: u.title,
   }));
 
-  return jsonOk({ songs });
+  const { albums, singles, songs } = buildAlbumsAndSingles(sources);
+
+  const songsWithDuration = songs.map((song) => {
+    const upload = uploads.find((u) => u.id === song.id);
+    return {
+      ...song,
+      duration: upload?.duration ?? 180,
+      audioUrl: upload?.audioFileName,
+    };
+  });
+
+  return jsonOk({ songs: songsWithDuration, albums, singles: songsWithDuration.filter((s) => singles.some((x) => x.id === s.id)) });
 }

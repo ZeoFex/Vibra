@@ -116,6 +116,7 @@ export default function ArtistRegisterPage() {
             file={avatarFile}
             onFileChange={setAvatarFile}
             label="Artist profile picture"
+            required
           />
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="sm:col-span-2">

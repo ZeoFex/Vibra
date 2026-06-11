@@ -8,12 +8,15 @@ function serializeUpload(upload: {
   title: string;
   artistName: string;
   albumTitle: string;
+  releaseType: string | null;
+  albumGroupId: string | null;
+  trackNumber: number | null;
   genre: string;
   about: string | null;
   producers: string;
   songwriters: string | null;
   featuredArtists: string | null;
-  lyrics: string;
+  lyrics: string | null;
   coverUrl: string;
   audioFileName: string;
   duration: number;
@@ -28,12 +31,15 @@ function serializeUpload(upload: {
     title: upload.title,
     artistName: upload.artistName,
     albumTitle: upload.albumTitle,
+    releaseType: upload.releaseType ?? undefined,
+    albumGroupId: upload.albumGroupId ?? undefined,
+    trackNumber: upload.trackNumber ?? undefined,
     genre: upload.genre,
     about: upload.about ?? "",
     producers: upload.producers,
     songwriters: upload.songwriters ?? "",
     featuredArtists: upload.featuredArtists ?? "",
-    lyrics: upload.lyrics,
+    lyrics: upload.lyrics ?? "",
     cover: upload.coverUrl,
     audioFileName: upload.audioFileName,
     duration: upload.duration,
@@ -70,6 +76,9 @@ export async function POST(request: Request) {
     title?: string;
     artistName?: string;
     albumTitle?: string;
+    releaseType?: string;
+    albumGroupId?: string;
+    trackNumber?: number;
     genre?: string;
     about?: string;
     producers?: string;
@@ -84,7 +93,7 @@ export async function POST(request: Request) {
     copyrightConfirmed?: boolean;
   }>(request);
 
-  if (!body?.title?.trim() || !body?.albumTitle?.trim() || !body?.producers?.trim() || !body?.lyrics?.trim() || !body?.audioFileName) {
+  if (!body?.title?.trim() || !body?.albumTitle?.trim() || !body?.producers?.trim() || !body?.audioFileName) {
     return jsonError("Missing required upload fields");
   }
 
@@ -98,12 +107,15 @@ export async function POST(request: Request) {
       title: body.title.trim(),
       artistName: (body.artistName ?? artist.stageName).trim(),
       albumTitle: body.albumTitle.trim(),
+      releaseType: body.releaseType?.trim(),
+      albumGroupId: body.albumGroupId?.trim(),
+      trackNumber: body.trackNumber,
       genre: body.genre ?? artist.genre,
       about: body.about?.trim(),
       producers: body.producers.trim(),
       songwriters: body.songwriters?.trim(),
       featuredArtists: body.featuredArtists?.trim(),
-      lyrics: body.lyrics.trim(),
+      lyrics: body.lyrics?.trim() || null,
       coverUrl: body.cover ?? "https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=400&h=400&fit=crop",
       audioFileName: body.audioFileName,
       duration: body.duration ?? 180,

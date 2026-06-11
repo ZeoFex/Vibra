@@ -6,7 +6,9 @@ import { useRouter } from "next/navigation";
 import { Shield, UserPlus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { PasswordField } from "@/components/auth/password-field";
 import { useAdmin } from "@/lib/contexts/admin-context";
+import { isPasswordValid } from "@/lib/auth/password-requirements";
 
 export default function AdminRegisterPage() {
   const [name, setName] = useState("");
@@ -19,6 +21,10 @@ export default function AdminRegisterPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!isPasswordValid(password)) {
+      setError("Please meet all password requirements before registering.");
+      return;
+    }
     setLoading(true);
     setError("");
 
@@ -64,10 +70,7 @@ export default function AdminRegisterPage() {
               <label className="mb-1.5 block text-sm text-white/70">Email</label>
               <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
             </div>
-            <div>
-              <label className="mb-1.5 block text-sm text-white/70">Password</label>
-              <Input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required minLength={8} />
-            </div>
+            <PasswordField value={password} onChange={setPassword} id="admin-register-password" />
           </div>
           <Button type="submit" className="mt-6 w-full gap-2" disabled={loading}>
             <UserPlus size={16} />

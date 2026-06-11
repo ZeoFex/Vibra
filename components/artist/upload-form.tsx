@@ -126,7 +126,6 @@ export function ArtistUploadForm({ onSuccess }: ArtistUploadFormProps) {
       const label = config.allowsMultipleTracks ? `Track ${i + 1}` : "Track";
       if (!track.title.trim()) return setError(`${label}: song title is required.`);
       if (!track.producers.trim()) return setError(`${label}: producer details are required.`);
-      if (!track.lyrics.trim()) return setError(`${label}: lyrics are required.`);
       if (!track.audioFileName) return setError(`${label}: please select an audio file.`);
     }
 
@@ -134,14 +133,19 @@ export function ArtistUploadForm({ onSuccess }: ArtistUploadFormProps) {
 
     setSubmitting(true);
     const albumTitle = `${config.label}: ${projectTitle.trim()}`;
+    const albumGroupId = crypto.randomUUID();
     const trackCount = tracks.length;
     let successCount = 0;
 
-    for (const track of tracks) {
+    for (let i = 0; i < tracks.length; i++) {
+      const track = tracks[i];
       const result = await submitUpload({
         title: track.title.trim(),
         artistName: artistName.trim(),
         albumTitle,
+        releaseType,
+        albumGroupId,
+        trackNumber: i + 1,
         genre,
         about: track.about.trim() || projectAbout.trim(),
         producers: track.producers.trim(),
@@ -385,12 +389,12 @@ export function ArtistUploadForm({ onSuccess }: ArtistUploadFormProps) {
                 <div className="mt-4">
                   <div className="mb-2 flex items-center gap-2">
                     <FileText size={16} className="text-violet-400" />
-                    <label className="text-xs font-medium text-white/50">Lyrics *</label>
+                    <label className="text-xs font-medium text-white/50">Lyrics (optional)</label>
                   </div>
                   <Textarea
                     value={track.lyrics}
                     onChange={(e) => updateTrack(index, "lyrics", e.target.value)}
-                    placeholder="Paste full lyrics for this track..."
+                    placeholder="Add lyrics now or update later from My Songs..."
                     rows={6}
                     className="font-mono text-sm"
                   />

@@ -1,17 +1,22 @@
 import { prisma } from "@/lib/prisma";
 import { hashPassword } from "@/lib/auth/password";
+import { getPasswordValidationError } from "@/lib/auth/password-requirements";
 import { signToken } from "@/lib/auth/jwt";
 import { setAuthCookie } from "@/lib/auth/cookies";
 import { jsonError, jsonOk, parseBody } from "@/lib/api-utils";
 
+const DEFAULT_AVATAR =
+  "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=200&h=200&fit=crop";
+
 export async function POST(request: Request) {
   const body = await parseBody<{ name?: string; email?: string; password?: string; avatarUrl?: string }>(request);
-  if (!body?.name?.trim() || !body?.email?.trim() || !body?.password || !body?.avatarUrl?.trim()) {
-    return jsonError("Name, email, password, and profile picture are required");
+  if (!body?.name?.trim() || !body?.email?.trim() || !body?.password) {
+    return jsonError("Name, email, and password are required");
   }
 
-  if (body.password.length < 8) {
-    return jsonError("Password must be at least 8 characters");
+  const passwordError = getPasswordValidationError(body.password);
+  if (passwordError) {
+    return jsonError(passwordError);
   }
 
   const email = body.email.trim().toLowerCase();
@@ -25,7 +30,7 @@ export async function POST(request: Request) {
       email,
       passwordHash,
       username: email.split("@")[0] + "-" + Date.now().toString(36).slice(-4),
-      avatarUrl: body.avatarUrl.trim(),
+      avatarUrl: body.avatarUrl?.trim() || DEFAULT_AVATAR,
     },
   });
 
@@ -38,7 +43,7 @@ export async function POST(request: Request) {
       name: user.name,
       email: user.email,
       username: user.username,
-      avatar: user.avatarUrl ?? "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=200&h=200&fit=crop",
+      avatar: user.avatarUrl ?? DEFAULT_AVATAR,
       bio: user.bio,
       tier: user.tier,
       followers: 0,
