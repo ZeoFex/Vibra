@@ -13,6 +13,7 @@ interface ProfilePicturePickerProps {
   onFileChange: (file: File | null) => void;
   label?: string;
   className?: string;
+  required?: boolean;
 }
 
 export function ProfilePicturePicker({
@@ -20,6 +21,7 @@ export function ProfilePicturePicker({
   onFileChange,
   label = "Profile picture",
   className,
+  required = false,
 }: ProfilePicturePickerProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [preview, setPreview] = useState(DEFAULT_AVATAR);
@@ -36,7 +38,10 @@ export function ProfilePicturePicker({
 
   return (
     <div className={cn("flex flex-col items-center gap-3", className)}>
-      <p className="text-sm text-white/70">{label} *</p>
+      <p className="text-sm text-white/70">
+        {label}
+        {required ? " *" : " (optional)"}
+      </p>
       <button
         type="button"
         onClick={() => inputRef.current?.click()}

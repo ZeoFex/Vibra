@@ -5,6 +5,7 @@ import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { PasswordField } from "@/components/auth/password-field";
 import { useAuth } from "@/lib/contexts/app-context";
 import { getSafeRedirect } from "@/lib/auth-redirect";
 
@@ -60,16 +61,13 @@ function LoginForm() {
             required
           />
         </div>
-        <div>
-          <label className="mb-1.5 block text-sm text-white/70">Password</label>
-          <Input
-            type="password"
-            placeholder="••••••••"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-          />
-        </div>
+        <PasswordField
+          value={password}
+          onChange={setPassword}
+          label="Password"
+          id="login-password"
+          autoComplete="current-password"
+        />
         <div className="text-right">
           <Link href="/forgot-password" className="text-sm text-violet-400 hover:underline">
             Forgot password?
@@ -93,7 +91,9 @@ function LoginForm() {
 
       <p className="mt-6 text-center text-sm text-white/50">
         Don&apos;t have an account?{" "}
-        <Link href="/signup" className="text-violet-400 hover:underline">Sign up</Link>
+        <Link href="/signup" className="text-violet-400 hover:underline">
+          Sign up
+        </Link>
       </p>
     </div>
   );

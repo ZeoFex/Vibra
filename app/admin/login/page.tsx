@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { Shield, Lock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { PasswordField } from "@/components/auth/password-field";
 import { useAdmin } from "@/lib/contexts/admin-context";
 
 export default function AdminLoginPage() {
@@ -48,10 +49,12 @@ export default function AdminLoginPage() {
               <label className="mb-1.5 block text-sm text-white/70">Email</label>
               <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="admin@vibra.app" required />
             </div>
-            <div>
-              <label className="mb-1.5 block text-sm text-white/70">Password</label>
-              <Input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" required />
-            </div>
+            <PasswordField
+              value={password}
+              onChange={setPassword}
+              id="admin-login-password"
+              autoComplete="current-password"
+            />
           </div>
           <Button type="submit" className="mt-6 w-full gap-2" disabled={loading}>
             <Lock size={16} />

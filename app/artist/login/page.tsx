@@ -6,6 +6,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Mic2, Lock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { PasswordField } from "@/components/auth/password-field";
 import { useArtistAuth } from "@/lib/contexts/artist-auth-context";
 import { getSafeRedirect } from "@/lib/auth-redirect";
 
@@ -78,10 +79,12 @@ function ArtistLoginForm() {
           <label className="mb-1.5 block text-sm text-white/70">Email</label>
           <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@example.com" required />
         </div>
-        <div>
-          <label className="mb-1.5 block text-sm text-white/70">Password</label>
-          <Input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" required />
-        </div>
+        <PasswordField
+          value={password}
+          onChange={setPassword}
+          id="artist-login-password"
+          autoComplete="current-password"
+        />
         <Button type="submit" className="w-full gap-2" disabled={loading}>
           <Lock size={16} />
           {loading ? "Signing in..." : "Sign in to Artist Portal"}

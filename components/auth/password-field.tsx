@@ -13,6 +13,7 @@ interface PasswordFieldProps {
   required?: boolean;
   showRequirements?: boolean;
   id?: string;
+  autoComplete?: string;
 }
 
 export function PasswordField({
@@ -22,6 +23,7 @@ export function PasswordField({
   required = true,
   showRequirements = true,
   id = "password",
+  autoComplete = "new-password",
 }: PasswordFieldProps) {
   const [visible, setVisible] = useState(false);
 
@@ -37,7 +39,7 @@ export function PasswordField({
           value={value}
           onChange={(e) => onChange(e.target.value)}
           required={required}
-          autoComplete="new-password"
+          autoComplete={autoComplete}
           className="pr-11"
         />
         <button

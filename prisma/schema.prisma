@@ -96,12 +96,15 @@ model ArtistUpload {
   title              String
   artistName         String       @map("artist_name")
   albumTitle         String       @map("album_title")
+  releaseType        String?      @map("release_type")
+  albumGroupId       String?      @map("album_group_id")
+  trackNumber        Int?         @map("track_number")
   genre              String
   about              String?
   producers          String
   songwriters        String?
   featuredArtists    String?      @map("featured_artists")
-  lyrics             String
+  lyrics             String?
   coverUrl           String       @map("cover_url")
   audioFileName      String       @map("audio_file_name")
   duration           Int          @default(180)

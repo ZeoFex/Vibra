@@ -3,9 +3,10 @@
 import { use } from "react";
 import Image from "next/image";
 import { Heart, Share2 } from "lucide-react";
-import { getAlbumById } from "@/lib/mock-data/albums";
-import { getSongsByAlbum } from "@/lib/mock-data/songs";
+import { getAlbumById as getStaticAlbumById } from "@/lib/mock-data/albums";
+import { getSongsByAlbum as getStaticSongsByAlbum } from "@/lib/mock-data/songs";
 import { usePlayer } from "@/lib/contexts/app-context";
+import { useArtistUploads } from "@/lib/contexts/artist-upload-context";
 import { SongCard, PlayButton } from "@/components/music/music-cards";
 import { Button } from "@/components/ui/button";
 import { formatDuration } from "@/lib/utils";
@@ -14,12 +15,14 @@ import { notFound } from "next/navigation";
 
 export default function AlbumPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
-  const album = getAlbumById(id);
+  const { getAlbumById, getSongsByAlbumId } = useArtistUploads();
   const { play, toggleLikeAlbum, isAlbumLiked } = usePlayer();
 
+  const album = getAlbumById(id) ?? getStaticAlbumById(id);
   if (!album) notFound();
 
-  const albumSongs = getSongsByAlbum(id);
+  const artistAlbumSongs = getSongsByAlbumId(id);
+  const albumSongs = artistAlbumSongs.length > 0 ? artistAlbumSongs : getStaticSongsByAlbum(id);
   const totalDuration = albumSongs.reduce((acc, s) => acc + s.duration, 0);
 
   return (
@@ -35,8 +38,10 @@ export default function AlbumPage({ params }: { params: Promise<{ id: string }> 
             <Link href={`/artist/${album.artistId}`} className="font-medium text-white hover:underline">
               {album.artistName}
             </Link>
-            {" · "}{new Date(album.releaseDate).getFullYear()}
-            {" · "}{albumSongs.length} songs · {formatDuration(totalDuration)}
+            {" · "}
+            {new Date(album.releaseDate).getFullYear()}
+            {" · "}
+            {albumSongs.length} songs · {formatDuration(totalDuration)}
           </p>
           <div className="mt-4 flex items-center justify-center gap-3 sm:justify-start">
             <PlayButton

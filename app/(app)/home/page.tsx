@@ -28,7 +28,13 @@ import { cn } from "@/lib/utils";
 
 export default function HomePage() {
   const { play } = usePlayer();
-  const { publishedSongs, getSongById: resolveSong, allSongs } = useArtistUploads();
+  const {
+    publishedAlbums,
+    publishedSingles,
+    getSongById: resolveSong,
+    getSongsByAlbumId,
+    allSongs,
+  } = useArtistUploads();
   const newReleases = getNewReleases().slice(0, 6);
 
   const handlePlaySong = (songId: string) => {
@@ -36,9 +42,13 @@ export default function HomePage() {
     if (song) play(song, allSongs);
   };
 
+  const handlePlayAlbum = (albumId: string) => {
+    const tracks = getSongsByAlbumId(albumId);
+    if (tracks[0]) play(tracks[0], tracks);
+  };
+
   return (
     <div className="space-y-8 sm:space-y-10">
-      {/* Greeting */}
       <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-violet-600/30 to-fuchsia-600/20 p-6 md:p-8">
         <div className="absolute right-0 top-0 h-40 w-40 rounded-full bg-violet-500/20 blur-3xl" />
         <h1 className="relative text-2xl font-bold md:text-3xl">Good evening</h1>
@@ -60,12 +70,24 @@ export default function HomePage() {
         </div>
       </div>
 
-      {/* Artist uploads — title + cover only (Spotify-style) */}
-      {publishedSongs.length > 0 && (
+      {publishedAlbums.length > 0 && (
         <section>
-          <SectionHeader title="New from Artists" href="/artist/login" />
+          <SectionHeader title="New Albums from Artists" href="/albums" />
           <HorizontalScroll>
-            {publishedSongs.map((song) => (
+            {publishedAlbums.map((album) => (
+              <div key={album.id} className="w-[180px] shrink-0 snap-start sm:min-w-[200px]">
+                <AlbumCard album={album} onPlay={() => handlePlayAlbum(album.id)} />
+              </div>
+            ))}
+          </HorizontalScroll>
+        </section>
+      )}
+
+      {publishedSingles.length > 0 && (
+        <section>
+          <SectionHeader title="New Singles from Artists" href="/albums" />
+          <HorizontalScroll>
+            {publishedSingles.map((song) => (
               <ThumbnailCard
                 key={song.id}
                 title={song.title}
@@ -77,7 +99,6 @@ export default function HomePage() {
         </section>
       )}
 
-      {/* Recently Played */}
       <section>
         <SectionHeader title="Recently Played" href="/library" />
         <HorizontalScroll>
@@ -93,7 +114,6 @@ export default function HomePage() {
         </HorizontalScroll>
       </section>
 
-      {/* Recommended */}
       <section>
         <SectionHeader title="Recommended For You" subtitle="Based on your listening history" />
         <div className="grid gap-1">
@@ -107,7 +127,6 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Trending */}
       <section>
         <SectionHeader title="Trending Songs" />
         <HorizontalScroll>
@@ -130,9 +149,8 @@ export default function HomePage() {
         </HorizontalScroll>
       </section>
 
-      {/* New Releases */}
       <section>
-        <SectionHeader title="New Releases" />
+        <SectionHeader title="New Releases" href="/albums" />
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
           {newReleases.map((album) => (
             <AlbumCard key={album.id} album={album} />
@@ -140,7 +158,6 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Top Charts */}
       <section>
         <SectionHeader title="Top Charts" />
         <div className="space-y-1">
@@ -160,7 +177,6 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Mood */}
       <section>
         <SectionHeader title="Based On Your Mood" href="/ai" />
         <HorizontalScroll>
@@ -180,7 +196,6 @@ export default function HomePage() {
         </HorizontalScroll>
       </section>
 
-      {/* Genres */}
       <section>
         <SectionHeader title="Browse Genres" href="/search" />
         <HorizontalScroll>
@@ -190,7 +205,6 @@ export default function HomePage() {
         </HorizontalScroll>
       </section>
 
-      {/* Playlists */}
       <section>
         <SectionHeader title="Made For You" />
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">

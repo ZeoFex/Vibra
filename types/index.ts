@@ -87,6 +87,7 @@ export interface Song {
   genre: string;
   plays: number;
   releaseDate: string;
+  trackNumber?: number;
   audioUrl?: string;
 }
 
@@ -97,6 +98,9 @@ export interface ArtistUpload {
   title: string;
   artistName: string;
   albumTitle: string;
+  releaseType?: string;
+  albumGroupId?: string;
+  trackNumber?: number;
   genre: string;
   about: string;
   producers: string;

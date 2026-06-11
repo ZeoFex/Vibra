@@ -9,9 +9,11 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import type { ArtistUpload, Song } from "@/types";
+import type { Album, ArtistUpload, Song } from "@/types";
 import { getSongById as getStaticSongById, songs as staticSongs } from "@/lib/mock-data/songs";
-import { uploadToSong } from "@/lib/artist-upload-utils";
+import { getAlbumById as getStaticAlbumById } from "@/lib/mock-data/albums";
+import { getSongsForAlbum } from "@/lib/album-utils";
+import { uploadToSongFromArtistUpload } from "@/lib/artist-upload-utils";
 
 type SubmitUploadInput = Omit<
   ArtistUpload,
@@ -21,12 +23,17 @@ type SubmitUploadInput = Omit<
 interface ArtistUploadContextValue {
   uploads: ArtistUpload[];
   publishedSongs: Song[];
+  publishedAlbums: Album[];
+  publishedSingles: Song[];
   allSongs: Song[];
+  allAlbums: Album[];
   isLoading: boolean;
   submitUpload: (input: SubmitUploadInput) => Promise<{ ok: boolean; upload?: ArtistUpload; error?: string }>;
   refreshUploads: () => Promise<void>;
   getSongById: (id: string) => Song | undefined;
   getUploadById: (id: string) => ArtistUpload | undefined;
+  getAlbumById: (id: string) => Album | undefined;
+  getSongsByAlbumId: (albumId: string) => Song[];
 }
 
 const ArtistUploadContext = createContext<ArtistUploadContextValue | null>(null);
@@ -34,14 +41,22 @@ const ArtistUploadContext = createContext<ArtistUploadContextValue | null>(null)
 export function ArtistUploadProvider({ children }: { children: ReactNode }) {
   const [uploads, setUploads] = useState<ArtistUpload[]>([]);
   const [publishedSongs, setPublishedSongs] = useState<Song[]>([]);
+  const [publishedAlbums, setPublishedAlbums] = useState<Album[]>([]);
+  const [publishedSingles, setPublishedSingles] = useState<Song[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   const refreshPublished = useCallback(async () => {
     try {
       const res = await fetch("/api/artist/uploads/published");
       if (res.ok) {
-        const data = (await res.json()) as { songs: Song[] };
+        const data = (await res.json()) as {
+          songs: Song[];
+          albums: Album[];
+          singles: Song[];
+        };
         setPublishedSongs(data.songs);
+        setPublishedAlbums(data.albums);
+        setPublishedSingles(data.singles);
       }
     } catch {
       /* keep existing */
@@ -69,6 +84,8 @@ export function ArtistUploadProvider({ children }: { children: ReactNode }) {
     return [...publishedSongs, ...staticSongs.filter((s) => !publishedIds.has(s.id))];
   }, [publishedSongs]);
 
+  const allAlbums = useMemo(() => publishedAlbums, [publishedAlbums]);
+
   const getSongById = useCallback(
     (id: string) => {
       const published = publishedSongs.find((s) => s.id === id);
@@ -81,6 +98,20 @@ export function ArtistUploadProvider({ children }: { children: ReactNode }) {
   const getUploadById = useCallback(
     (id: string) => uploads.find((u) => u.id === id),
     [uploads]
+  );
+
+  const getAlbumById = useCallback(
+    (id: string) => {
+      const published = publishedAlbums.find((a) => a.id === id);
+      if (published) return published;
+      return getStaticAlbumById(id);
+    },
+    [publishedAlbums]
+  );
+
+  const getSongsByAlbumId = useCallback(
+    (albumId: string) => getSongsForAlbum(albumId, allSongs),
+    [allSongs]
   );
 
   const submitUpload = useCallback(
@@ -108,14 +139,33 @@ export function ArtistUploadProvider({ children }: { children: ReactNode }) {
     () => ({
       uploads,
       publishedSongs,
+      publishedAlbums,
+      publishedSingles,
       allSongs,
+      allAlbums,
       isLoading,
       submitUpload,
       refreshUploads,
       getSongById,
       getUploadById,
+      getAlbumById,
+      getSongsByAlbumId,
     }),
-    [uploads, publishedSongs, allSongs, isLoading, submitUpload, refreshUploads, getSongById, getUploadById]
+    [
+      uploads,
+      publishedSongs,
+      publishedAlbums,
+      publishedSingles,
+      allSongs,
+      allAlbums,
+      isLoading,
+      submitUpload,
+      refreshUploads,
+      getSongById,
+      getUploadById,
+      getAlbumById,
+      getSongsByAlbumId,
+    ]
   );
 
   return (
@@ -129,4 +179,4 @@ export function useArtistUploads() {
   return ctx;
 }
 
-export { uploadToSong };
+export { uploadToSongFromArtistUpload as uploadToSong };
