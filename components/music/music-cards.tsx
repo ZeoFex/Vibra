@@ -1,7 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { Play } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn, formatNumber } from "@/lib/utils";
 import type { Song, Album, Artist, Playlist } from "@/types";
 
 interface PlayButtonProps {
@@ -59,7 +59,11 @@ export function SongCard({ song, onPlay, showArtist = true, index }: SongCardPro
         <span className="w-6 text-center text-sm text-white/40">{index}</span>
       )}
       <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-lg">
-        <Image src={song.cover} alt={song.title} fill className="object-cover" />
+        {song.cover.startsWith("/api/") ? (
+          <img src={song.cover} alt="" className="h-full w-full object-cover" />
+        ) : (
+          <Image src={song.cover} alt={song.title} fill className="object-cover" />
+        )}
         {onPlay && (
           <button
             type="button"
@@ -125,7 +129,7 @@ export function ArtistCard({ artist }: ArtistCardProps) {
         <Image src={artist.image} alt={artist.name} fill className="object-cover transition-transform group-hover:scale-105" />
       </div>
       <p className="truncate text-sm font-medium text-white">{artist.name}</p>
-      <p className="text-xs text-white/50">Artist</p>
+      <p className="text-xs text-white/50">{formatNumber(artist.monthlyListeners)} plays</p>
     </Link>
   );
 }

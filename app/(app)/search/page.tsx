@@ -1,9 +1,11 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { Suspense, useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { Search as SearchIcon } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import { songs, artists, albums, genres } from "@/lib/mock-data";
+import type { Album, Artist, Song } from "@/types";
+import type { AudiusGenre } from "@/lib/audius";
 import { usePlayer } from "@/lib/contexts/app-context";
 import {
   SectionHeader,
@@ -13,24 +15,73 @@ import {
   GenreCard,
   HorizontalScroll,
 } from "@/components/music/music-cards";
+import { Pagination, usePage } from "@/components/ui/pagination";
 
-export default function SearchPage() {
-  const [query, setQuery] = useState("");
+function SearchPage() {
+  const searchParams = useSearchParams();
+  const [query, setQuery] = useState(searchParams.get("q") ?? "");
+  const [songs, setSongs] = useState<Song[]>([]);
+  const [artists, setArtists] = useState<Artist[]>([]);
+  const [albums, setAlbums] = useState<Album[]>([]);
+  const [genres, setGenres] = useState<AudiusGenre[]>([]);
+  const [searching, setSearching] = useState(false);
   const { play } = usePlayer();
 
-  const results = useMemo(() => {
-    if (!query.trim()) return null;
-    const q = query.toLowerCase();
-    return {
-      songs: songs.filter(
-        (s) => s.title.toLowerCase().includes(q) || s.artistName.toLowerCase().includes(q)
-      ),
-      artists: artists.filter((a) => a.name.toLowerCase().includes(q)),
-      albums: albums.filter(
-        (a) => a.title.toLowerCase().includes(q) || a.artistName.toLowerCase().includes(q)
-      ),
-    };
+  useEffect(() => {
+    fetch("/api/music/browse")
+      .then(async (res) => {
+        const data = (await res.json()) as { artists?: Artist[]; albums?: Album[]; genres?: AudiusGenre[] };
+        setArtists(Array.isArray(data.artists) ? data.artists : []);
+        setAlbums(Array.isArray(data.albums) ? data.albums : []);
+        setGenres(Array.isArray(data.genres) ? data.genres : []);
+      })
+      .catch(() => {
+        setArtists([]);
+        setAlbums([]);
+        setGenres([]);
+      });
+  }, []);
+
+  useEffect(() => {
+    setQuery(searchParams.get("q") ?? "");
+  }, [searchParams]);
+
+  useEffect(() => {
+    const q = query.trim();
+    if (q.length < 2) {
+      setSongs([]);
+      setSearching(false);
+      return;
+    }
+
+    const handle = setTimeout(() => {
+      setSearching(true);
+      fetch(`/api/music/search?q=${encodeURIComponent(q)}`)
+        .then(async (res) => {
+          const data = (await res.json()) as { songs?: Song[] };
+          setSongs(Array.isArray(data.songs) ? data.songs : []);
+        })
+        .catch(() => setSongs([]))
+        .finally(() => setSearching(false));
+    }, 300);
+
+    return () => clearTimeout(handle);
   }, [query]);
+
+  const results = query.trim().length < 2
+    ? null
+    : {
+        songs,
+        artists: artists.filter((a) => a.name.toLowerCase().includes(query.trim().toLowerCase())),
+        albums: albums.filter(
+          (a) =>
+            a.title.toLowerCase().includes(query.trim().toLowerCase()) ||
+            a.artistName.toLowerCase().includes(query.trim().toLowerCase())
+        ),
+      };
+
+  const artistPages = usePage(results?.artists ?? artists, 12, query || "browse-artists");
+  const songPages = usePage(results?.songs ?? [], 8, query);
 
   return (
     <div className="space-y-8">
@@ -58,14 +109,18 @@ export default function SearchPage() {
           <section>
             <SectionHeader title="Popular Artists" />
             <div className="grid grid-cols-2 gap-6 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
-              {artists.map((artist) => (
-                <ArtistCard key={artist.id} artist={artist} />
+              {artistPages.slice.map((artist, i) => (
+                <div key={artist.id}>
+                  <p className="mb-2 text-center text-xs font-bold text-white/40">#{artistPages.start + i + 1}</p>
+                  <ArtistCard artist={artist} />
+                </div>
               ))}
             </div>
+            <Pagination page={artistPages.page} pageCount={artistPages.pageCount} onPage={artistPages.setPage} />
           </section>
 
           <section>
-            <SectionHeader title="All Albums" />
+            <SectionHeader title="Albums" />
             <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
               {albums.map((album) => (
                 <AlbumCard key={album.id} album={album} />
@@ -79,10 +134,11 @@ export default function SearchPage() {
             <section>
               <SectionHeader title="Artists" />
               <div className="grid grid-cols-2 gap-6 sm:grid-cols-3 md:grid-cols-4">
-                {results.artists.map((artist) => (
+                {artistPages.slice.map((artist) => (
                   <ArtistCard key={artist.id} artist={artist} />
                 ))}
               </div>
+              <Pagination page={artistPages.page} pageCount={artistPages.pageCount} onPage={artistPages.setPage} />
             </section>
           )}
           {results.albums.length > 0 && (
@@ -95,26 +151,36 @@ export default function SearchPage() {
               </div>
             </section>
           )}
+          {searching && <p className="text-sm text-white/50">Searching…</p>}
           {results.songs.length > 0 && (
             <section>
               <SectionHeader title="Songs" />
               <div className="space-y-1">
-                {results.songs.map((song, i) => (
+                {songPages.slice.map((song, i) => (
                   <SongCard
                     key={song.id}
                     song={song}
-                    index={i + 1}
+                    index={songPages.start + i + 1}
                     onPlay={() => play(song, results.songs)}
                   />
                 ))}
               </div>
+              <Pagination page={songPages.page} pageCount={songPages.pageCount} onPage={songPages.setPage} />
             </section>
           )}
-          {results.songs.length === 0 && results.artists.length === 0 && results.albums.length === 0 && (
+          {!searching && results.songs.length === 0 && results.artists.length === 0 && results.albums.length === 0 && (
             <p className="text-center text-white/50">No results for &ldquo;{query}&rdquo;</p>
           )}
         </div>
       )}
     </div>
+  );
+}
+
+export default function SearchPageWithParams() {
+  return (
+    <Suspense fallback={<div className="h-12" />}>
+      <SearchPage />
+    </Suspense>
   );
 }

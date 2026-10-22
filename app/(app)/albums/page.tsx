@@ -1,12 +1,12 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Disc3 } from "lucide-react";
 import { useArtistUploads } from "@/lib/contexts/artist-upload-context";
-import { albums as staticAlbums } from "@/lib/mock-data/albums";
 import { AlbumCard } from "@/components/music/music-cards";
+import { Pagination, usePage } from "@/components/ui/pagination";
 import { usePlayer } from "@/lib/contexts/app-context";
-import type { Album } from "@/types";
+import type { Album, Song } from "@/types";
 
 const filters = ["All", "Albums", "EPs", "Singles"] as const;
 type Filter = (typeof filters)[number];
@@ -15,6 +15,16 @@ export default function AlbumsPage() {
   const { publishedAlbums, publishedSingles, getSongsByAlbumId, allSongs } = useArtistUploads();
   const { play } = usePlayer();
   const [filter, setFilter] = useState<Filter>("All");
+  const [audiusAlbums, setAudiusAlbums] = useState<Album[]>([]);
+
+  useEffect(() => {
+    fetch("/api/music/browse")
+      .then(async (res) => {
+        const data = (await res.json()) as { albums?: Album[] };
+        setAudiusAlbums(Array.isArray(data.albums) ? data.albums : []);
+      })
+      .catch(() => setAudiusAlbums([]));
+  }, []);
 
   const singlesAsAlbums: Album[] = useMemo(
     () =>
@@ -33,13 +43,14 @@ export default function AlbumsPage() {
   );
 
   const catalog = useMemo(() => {
-    const merged = [...publishedAlbums, ...singlesAsAlbums];
-    const staticIds = new Set(merged.map((a) => a.id));
-    const extras = staticAlbums.filter((a) => !staticIds.has(a.id));
-    return [...merged, ...extras].sort(
-      (a, b) => new Date(b.releaseDate).getTime() - new Date(a.releaseDate).getTime()
-    );
-  }, [publishedAlbums, singlesAsAlbums]);
+    const merged = [...publishedAlbums, ...singlesAsAlbums, ...audiusAlbums];
+    const seen = new Set<string>();
+    return merged.filter((album) => {
+      if (seen.has(album.id)) return false;
+      seen.add(album.id);
+      return true;
+    });
+  }, [publishedAlbums, singlesAsAlbums, audiusAlbums]);
 
   const filtered = useMemo(() => {
     if (filter === "All") return catalog;
@@ -48,7 +59,19 @@ export default function AlbumsPage() {
     return catalog.filter((a) => a.type === "album");
   }, [catalog, filter]);
 
+  const albumPages = usePage(filtered, 12, filter);
+
   const handlePlayAlbum = (album: Album) => {
+    if (album.id.startsWith("au-pl-")) {
+      const playlistId = album.id.slice("au-pl-".length);
+      void fetch(`/api/music/playlist/${playlistId}`)
+        .then(async (res) => {
+          const data = (await res.json()) as { songs?: Song[] };
+          const songs = data.songs ?? [];
+          if (songs[0]) play(songs[0], songs);
+        });
+      return;
+    }
     const tracks = getSongsByAlbumId(album.id);
     if (tracks[0]) play(tracks[0], tracks.length > 0 ? tracks : allSongs);
   };
@@ -62,7 +85,6 @@ export default function AlbumsPage() {
             <span className="text-sm font-medium uppercase tracking-wide">Browse</span>
           </div>
           <h1 className="text-2xl font-bold md:text-3xl">Albums</h1>
-          <p className="mt-1 text-white/60">Scroll through albums, EPs, and singles from Vibra artists</p>
         </div>
         <div className="flex flex-wrap gap-2">
           {filters.map((item) => (
@@ -85,11 +107,14 @@ export default function AlbumsPage() {
           No albums in this category yet.
         </div>
       ) : (
-        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
-          {filtered.map((album) => (
-            <AlbumCard key={album.id} album={album} onPlay={() => handlePlayAlbum(album)} />
-          ))}
-        </div>
+        <>
+          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
+            {albumPages.slice.map((album) => (
+              <AlbumCard key={album.id} album={album} onPlay={() => handlePlayAlbum(album)} />
+            ))}
+          </div>
+          <Pagination page={albumPages.page} pageCount={albumPages.pageCount} onPage={albumPages.setPage} />
+        </>
       )}
     </div>
   );

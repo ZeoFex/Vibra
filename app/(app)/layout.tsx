@@ -35,11 +35,11 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   return (
     <SocialProvider>
       <ChatProvider>
-        <div className="flex min-h-screen min-h-dvh gradient-bg">
+        <div className="flex h-dvh overflow-hidden gradient-bg">
           <Sidebar mobileOpen={mobileOpen} setMobileOpen={setMobileOpen} />
-          <div className={cn("flex min-w-0 flex-1 flex-col", isPlayerBarVisible && "pb-app")}>
+          <div className="flex min-h-0 min-w-0 flex-1 flex-col">
             <TopBar onMenuClick={() => setMobileOpen(true)} />
-            <main className="flex-1 overflow-x-hidden overflow-y-auto px-3 py-4 sm:px-4 sm:py-6 md:px-8">
+            <main className={cn("min-h-0 flex-1 overflow-x-hidden overflow-y-auto px-3 py-4 sm:px-4 sm:py-6 md:px-8", isPlayerBarVisible && "pb-app")}>
               {children}
             </main>
           </div>

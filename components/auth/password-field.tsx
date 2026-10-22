@@ -14,6 +14,7 @@ interface PasswordFieldProps {
   showRequirements?: boolean;
   id?: string;
   autoComplete?: string;
+  inputClassName?: string;
 }
 
 export function PasswordField({
@@ -24,13 +25,14 @@ export function PasswordField({
   showRequirements = true,
   id = "password",
   autoComplete = "new-password",
+  inputClassName,
 }: PasswordFieldProps) {
   const [visible, setVisible] = useState(false);
 
   return (
     <div>
-      <label htmlFor={id} className="mb-1.5 block text-sm text-white/70">
-        {label} {required && "*"}
+      <label htmlFor={id} className="mb-2 block text-sm font-bold text-white">
+        {label}
       </label>
       <div className="relative">
         <Input
@@ -40,7 +42,7 @@ export function PasswordField({
           onChange={(e) => onChange(e.target.value)}
           required={required}
           autoComplete={autoComplete}
-          className="pr-11"
+          className={cn("pr-11", inputClassName)}
         />
         <button
           type="button"
@@ -52,8 +54,8 @@ export function PasswordField({
         </button>
       </div>
       {showRequirements && (
-        <div className="mt-2 rounded-lg border border-white/10 bg-white/[0.02] p-3">
-          <p className="mb-2 text-xs text-white/50">Password must contain:</p>
+        <div className="mt-3">
+          <p className="mb-2 text-xs font-medium text-white/50">Password must contain</p>
           <ul className="space-y-1">
             {passwordRequirements.map((req) => {
               const met = value.length > 0 && req.test(value);

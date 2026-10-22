@@ -1,6 +1,6 @@
 "use client";
 
-import { use } from "react";
+import { use, useEffect, useState } from "react";
 import Image from "next/image";
 import { Heart, Share2 } from "lucide-react";
 import { getAlbumById as getStaticAlbumById } from "@/lib/mock-data/albums";
@@ -11,18 +11,36 @@ import { SongCard, PlayButton } from "@/components/music/music-cards";
 import { Button } from "@/components/ui/button";
 import { formatDuration } from "@/lib/utils";
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import type { Album, Song } from "@/types";
 
 export default function AlbumPage({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = use(params);
+  const albumId = use(params).id;
+  const audiusPlaylistId = albumId.startsWith("au-pl-") ? albumId.slice("au-pl-".length) : "";
   const { getAlbumById, getSongsByAlbumId } = useArtistUploads();
   const { play, toggleLikeAlbum, isAlbumLiked } = usePlayer();
+  const [remoteAlbum, setRemoteAlbum] = useState<Album | null>(null);
+  const [remoteSongs, setRemoteSongs] = useState<Song[] | null>(null);
 
-  const album = getAlbumById(id) ?? getStaticAlbumById(id);
-  if (!album) notFound();
+  useEffect(() => {
+    if (!audiusPlaylistId) return;
+    fetch(`/api/music/playlist/${audiusPlaylistId}`)
+      .then(async (res) => {
+        if (!res.ok) return;
+        const data = (await res.json()) as { album?: Album; songs?: Song[] };
+        setRemoteAlbum(data.album ?? null);
+        setRemoteSongs(data.songs ?? []);
+      })
+      .catch(() => setRemoteSongs([]));
+  }, [audiusPlaylistId]);
 
-  const artistAlbumSongs = getSongsByAlbumId(id);
-  const albumSongs = artistAlbumSongs.length > 0 ? artistAlbumSongs : getStaticSongsByAlbum(id);
+  const album = remoteAlbum ?? getAlbumById(albumId) ?? getStaticAlbumById(albumId);
+  if (!album) {
+    if (audiusPlaylistId && remoteSongs === null) return <p className="text-white/50">Loading album…</p>;
+    return <p className="text-white/50">Album not found.</p>;
+  }
+
+  const artistAlbumSongs = remoteSongs ?? getSongsByAlbumId(albumId);
+  const albumSongs = artistAlbumSongs.length > 0 ? artistAlbumSongs : getStaticSongsByAlbum(albumId);
   const totalDuration = albumSongs.reduce((acc, s) => acc + s.duration, 0);
 
   return (

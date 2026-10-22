@@ -44,6 +44,7 @@ export function ArtistUploadProvider({ children }: { children: ReactNode }) {
   const [publishedSongs, setPublishedSongs] = useState<Song[]>([]);
   const [publishedAlbums, setPublishedAlbums] = useState<Album[]>([]);
   const [publishedSingles, setPublishedSingles] = useState<Song[]>([]);
+  const [spotifySongs, setSpotifySongs] = useState<Song[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   const refreshPublished = useCallback(async () => {
@@ -76,14 +77,29 @@ export function ArtistUploadProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
+  const refreshSpotify = useCallback(async () => {
+    try {
+      const res = await fetch("/api/music/catalog");
+      if (!res.ok) return;
+      const data = (await res.json()) as { songs?: Song[] };
+      if (Array.isArray(data.songs)) setSpotifySongs(data.songs);
+    } catch {
+      /* catalog stays empty */
+    }
+  }, []);
+
   useEffect(() => {
-    Promise.all([refreshPublished(), refreshUploads()]).finally(() => setIsLoading(false));
-  }, [refreshPublished, refreshUploads]);
+    Promise.all([refreshPublished(), refreshUploads(), refreshSpotify()]).finally(() => setIsLoading(false));
+  }, [refreshPublished, refreshUploads, refreshSpotify]);
 
   const allSongs = useMemo(() => {
     const publishedIds = new Set(publishedSongs.map((s) => s.id));
-    return [...publishedSongs, ...staticSongs.filter((s) => !publishedIds.has(s.id))];
-  }, [publishedSongs]);
+    return [
+      ...publishedSongs,
+      ...spotifySongs,
+      ...staticSongs.filter((s) => !publishedIds.has(s.id)),
+    ];
+  }, [publishedSongs, spotifySongs]);
 
   const allAlbums = useMemo(() => publishedAlbums, [publishedAlbums]);
 
@@ -91,6 +107,8 @@ export function ArtistUploadProvider({ children }: { children: ReactNode }) {
     (id: string) => {
       const published = publishedSongs.find((s) => s.id === id);
       if (published) return published;
+      const spotify = spotifySongs.find((s) => s.id === id);
+      if (spotify) return spotify;
       const staticSong = getStaticSongById(id);
       if (staticSong) {
         return {
@@ -100,7 +118,7 @@ export function ArtistUploadProvider({ children }: { children: ReactNode }) {
       }
       return undefined;
     },
-    [publishedSongs]
+    [publishedSongs, spotifySongs]
   );
 
   const getUploadById = useCallback(

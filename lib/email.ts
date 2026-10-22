@@ -61,42 +61,20 @@ async function sendWithTransport(
   return transport.sendMail(mail);
 }
 
-export async function sendVerificationEmail(
-  to: string,
-  name: string,
-  verifyUrl: string
-): Promise<{ sent: boolean; error?: string }> {
-  const from = process.env.SMTP_FROM?.trim() ?? process.env.SMTP_USER?.trim();
+async function deliverMail(mail: {
+  from: string;
+  to: string;
+  subject: string;
+  html: string;
+}): Promise<{ sent: boolean; error?: string }> {
   const transport = createTransport();
-
-  if (!transport || !from) {
-    console.warn("[email] SMTP not configured — verification URL:", verifyUrl);
+  if (!transport) {
     return { sent: false, error: "Email service not configured" };
   }
-
-  const mail = {
-    from,
-    to,
-    subject: "Verify your Vibra artist account",
-    html: `
-      <div style="font-family:sans-serif;max-width:480px;margin:0 auto">
-        <h2>Welcome to Vibra, ${name}!</h2>
-        <p>Click the button below to verify your artist account and start uploading music.</p>
-        <p style="margin:24px 0">
-          <a href="${verifyUrl}" style="background:#7c3aed;color:#fff;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:600">
-            Verify Email
-          </a>
-        </p>
-        <p style="color:#666;font-size:14px">Or copy this link: ${verifyUrl}</p>
-        <p style="color:#666;font-size:14px">This link expires in 24 hours.</p>
-      </div>
-    `,
-  };
 
   const attempts = [
     () => sendWithTransport(transport, mail),
     async () => {
-      // Fallback: Gmail SSL on 465 (more reliable than STARTTLS on some networks)
       const { user, pass } = smtpCredentials();
       if (!user || !pass) throw new Error("SMTP credentials missing");
       const fallback = nodemailer.createTransport({
@@ -129,6 +107,75 @@ export async function sendVerificationEmail(
     error:
       process.env.NODE_ENV === "development" && lastError
         ? `Failed to send email: ${lastError.message}`
-        : "Failed to send verification email",
+        : "Failed to send email",
   };
+}
+
+export async function sendVerificationEmail(
+  to: string,
+  name: string,
+  verifyUrl: string
+): Promise<{ sent: boolean; error?: string }> {
+  const from = process.env.SMTP_FROM?.trim() ?? process.env.SMTP_USER?.trim();
+
+  if (!from) {
+    console.warn("[email] SMTP not configured — verification URL:", verifyUrl);
+    return { sent: false, error: "Email service not configured" };
+  }
+
+  const result = await deliverMail({
+    from,
+    to,
+    subject: "Verify your Vibra artist account",
+    html: `
+      <div style="font-family:sans-serif;max-width:480px;margin:0 auto">
+        <h2>Welcome to Vibra, ${name}!</h2>
+        <p>Click the button below to verify your artist account and start uploading music.</p>
+        <p style="margin:24px 0">
+          <a href="${verifyUrl}" style="background:#7c3aed;color:#fff;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:600">
+            Verify Email
+          </a>
+        </p>
+        <p style="color:#666;font-size:14px">Or copy this link: ${verifyUrl}</p>
+        <p style="color:#666;font-size:14px">This link expires in 24 hours.</p>
+      </div>
+    `,
+  });
+
+  if (!result.sent && result.error === "Failed to send email") {
+    return { sent: false, error: "Failed to send verification email" };
+  }
+  return result;
+}
+
+export async function sendPasswordResetEmail(
+  to: string,
+  name: string,
+  resetUrl: string
+): Promise<{ sent: boolean; error?: string }> {
+  const from = process.env.SMTP_FROM?.trim() ?? process.env.SMTP_USER?.trim();
+
+  if (!from) {
+    console.warn("[email] SMTP not configured — reset URL:", resetUrl);
+    return { sent: false, error: "Email service not configured" };
+  }
+
+  return deliverMail({
+    from,
+    to,
+    subject: "Reset your Vibra password",
+    html: `
+      <div style="font-family:sans-serif;max-width:480px;margin:0 auto">
+        <h2>Reset your password</h2>
+        <p>Hi ${name}, we received a request to reset the password for your Vibra account.</p>
+        <p style="margin:24px 0">
+          <a href="${resetUrl}" style="background:#7c3aed;color:#fff;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:600">
+            Reset password
+          </a>
+        </p>
+        <p style="color:#666;font-size:14px">Or copy this link: ${resetUrl}</p>
+        <p style="color:#666;font-size:14px">This link expires in 1 hour. If you did not ask for this, you can ignore this email.</p>
+      </div>
+    `,
+  });
 }

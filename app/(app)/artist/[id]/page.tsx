@@ -1,6 +1,6 @@
 "use client";
 
-import { use } from "react";
+import { use, useEffect, useState } from "react";
 import Image from "next/image";
 import { BadgeCheck, Heart, Share2, UserPlus } from "lucide-react";
 import { getArtistById } from "@/lib/mock-data/artists";
@@ -10,17 +10,39 @@ import { usePlayer } from "@/lib/contexts/app-context";
 import { SongCard, AlbumCard, PlayButton } from "@/components/music/music-cards";
 import { Button } from "@/components/ui/button";
 import { formatNumber } from "@/lib/utils";
-import { notFound } from "next/navigation";
+import type { Artist, Song } from "@/types";
 
 export default function ArtistPage({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = use(params);
-  const artist = getArtistById(id);
+  const artistId = use(params).id;
+  const audiusUserId = artistId.startsWith("au-") && !artistId.startsWith("au-pl-") ? artistId.slice(3) : "";
+  const localArtist = getArtistById(artistId);
   const { play, toggleLikeArtist, isArtistLiked } = usePlayer();
+  const [remoteArtist, setRemoteArtist] = useState<Artist | null>(null);
+  const [remoteSongs, setRemoteSongs] = useState<Song[] | null>(null);
 
-  if (!artist) notFound();
+  useEffect(() => {
+    if (!audiusUserId) return;
+    fetch(`/api/music/artist/${audiusUserId}`)
+      .then(async (res) => {
+        if (!res.ok) {
+          setRemoteSongs([]);
+          return;
+        }
+        const data = (await res.json()) as { artist?: Artist; songs?: Song[] };
+        setRemoteArtist(data.artist ?? null);
+        setRemoteSongs(data.songs ?? []);
+      })
+      .catch(() => setRemoteSongs([]));
+  }, [audiusUserId]);
 
-  const artistSongs = getSongsByArtist(id);
-  const artistAlbums = getAlbumsByArtist(id);
+  const artist = remoteArtist ?? localArtist;
+  if (!artist) {
+    if (audiusUserId && remoteSongs === null) return <p className="text-white/50">Loading artist…</p>;
+    return <p className="text-white/50">Artist not found.</p>;
+  }
+
+  const artistSongs = remoteSongs ?? getSongsByArtist(artistId);
+  const artistAlbums = remoteSongs ? [] : getAlbumsByArtist(artistId);
   const popularTracks = [...artistSongs].sort((a, b) => b.plays - a.plays).slice(0, 5);
   const singles = artistAlbums.filter((a) => a.type === "single" || a.type === "ep");
   const albums = artistAlbums.filter((a) => a.type === "album");

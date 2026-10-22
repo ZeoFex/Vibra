@@ -28,6 +28,7 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
+import { VibraLogo } from "@/components/brand/vibra-logo";
 import { useAdmin } from "@/lib/contexts/admin-context";
 import { hasPermission, ADMIN_ROLE_LABELS, type AdminRole } from "@/types/admin";
 
@@ -111,12 +112,10 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
             <ArrowLeft size={16} />
             Back to Vibra
           </Link>
-          <div className="mb-6 flex items-center gap-2">
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-to-br from-violet-600 to-fuchsia-600 font-bold">
-              V
-            </div>
+          <div className="mb-6 flex items-center gap-3">
+            <VibraLogo size={48} />
             <div>
-              <p className="font-bold">Vibra Admin</p>
+              <p className="font-bold">Admin</p>
               <p className="text-xs text-white/40">Control Center</p>
             </div>
           </div>

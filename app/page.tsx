@@ -10,6 +10,7 @@ import {
   ChevronRight,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { VibraLogo } from "@/components/brand/vibra-logo";
 
 const features = [
   {
@@ -44,12 +45,7 @@ export default function LandingPage() {
     <div className="min-h-screen bg-black text-white">
       {/* Nav */}
       <nav className="fixed top-0 z-50 flex w-full items-center justify-between gap-2 border-b border-white/5 bg-black/60 px-4 py-3 backdrop-blur-xl sm:px-6 sm:py-4">
-        <div className="flex min-w-0 items-center gap-2">
-          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-violet-600 to-fuchsia-600 sm:h-9 sm:w-9">
-            <span className="text-base font-bold sm:text-lg">V</span>
-          </div>
-          <span className="truncate text-lg font-bold sm:text-xl">Vibra</span>
-        </div>
+        <VibraLogo size={44} />
         <div className="flex shrink-0 items-center gap-2 sm:gap-3">
           <Link href="/login">
             <Button variant="ghost" size="sm" className="px-3 sm:px-4">Log in</Button>
@@ -198,12 +194,7 @@ export default function LandingPage() {
       {/* Footer */}
       <footer className="border-t border-white/10 px-6 py-12">
         <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-4 md:flex-row">
-          <div className="flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-violet-600 to-fuchsia-600">
-              <span className="text-sm font-bold">V</span>
-            </div>
-            <span className="font-bold">Vibra</span>
-          </div>
+          <VibraLogo size={40} />
           <p className="text-sm text-white/40">© 2026 Vibra. Feel Every Beat.</p>
         </div>
       </footer>
