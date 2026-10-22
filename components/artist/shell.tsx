@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
+import { VibraLogo } from "@/components/brand/vibra-logo";
 import { useArtistAuth } from "@/lib/contexts/artist-auth-context";
 
 const navItems = [
@@ -32,14 +33,9 @@ export function ArtistShell({ children }: { children: React.ReactNode }) {
 
   const NavContent = () => (
     <>
-      <Link href="/artist/dashboard" className="mb-8 flex items-center gap-2 px-2" onClick={() => setMobileOpen(false)}>
-        <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-violet-600 to-fuchsia-600">
-          <span className="text-lg font-bold text-white">V</span>
-        </div>
-        <div>
-          <span className="text-xl font-bold text-white">Vibra</span>
-          <p className="text-xs text-white/40">Artist Portal</p>
-        </div>
+      <Link href="/artist/dashboard" className="mb-8 flex items-center gap-3 px-2" onClick={() => setMobileOpen(false)}>
+        <VibraLogo size={48} />
+        <p className="text-xs text-white/40">Artist Portal</p>
       </Link>
 
       <nav className="flex flex-1 flex-col gap-1">

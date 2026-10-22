@@ -1,6 +1,14 @@
 import type { Song } from "@/types";
+import { getDemoAudioUrl } from "@/lib/audio/demo-tracks";
 
-export const songs: Song[] = [
+function withDemoAudio(song: Omit<Song, "audioUrl"> & { audioUrl?: string }): Song {
+  return {
+    ...song,
+    audioUrl: song.audioUrl ?? getDemoAudioUrl(song.id),
+  };
+}
+
+const rawSongs = [
   {
     id: "song-1",
     title: "Neon Dreams",
@@ -157,7 +165,9 @@ export const songs: Song[] = [
     plays: 10_100_000,
     releaseDate: "2025-07-14",
   },
-];
+] as const satisfies readonly (Omit<Song, "audioUrl"> & { audioUrl?: string })[];
+
+export const songs: Song[] = rawSongs.map((song) => withDemoAudio({ ...song }));
 
 export function getSongById(id: string): Song | undefined {
   return songs.find((s) => s.id === id);

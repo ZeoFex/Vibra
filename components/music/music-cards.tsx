@@ -1,7 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { Play } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn, formatNumber } from "@/lib/utils";
 import type { Song, Album, Artist, Playlist } from "@/types";
 
 interface PlayButtonProps {
@@ -36,15 +36,41 @@ interface SongCardProps {
 
 export function SongCard({ song, onPlay, showArtist = true, index }: SongCardProps) {
   return (
-    <div className="group flex items-center gap-4 rounded-xl px-3 py-2 transition-colors hover:bg-white/5">
+    <div
+      className={cn(
+        "group flex items-center gap-4 rounded-xl px-3 py-2 transition-colors hover:bg-white/5",
+        onPlay && "cursor-pointer"
+      )}
+      onClick={onPlay ? () => onPlay(song) : undefined}
+      role={onPlay ? "button" : undefined}
+      tabIndex={onPlay ? 0 : undefined}
+      onKeyDown={
+        onPlay
+          ? (e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                onPlay(song);
+              }
+            }
+          : undefined
+      }
+    >
       {index !== undefined && (
         <span className="w-6 text-center text-sm text-white/40">{index}</span>
       )}
       <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-lg">
-        <Image src={song.cover} alt={song.title} fill className="object-cover" />
+        {song.cover.startsWith("/api/") ? (
+          <img src={song.cover} alt="" className="h-full w-full object-cover" />
+        ) : (
+          <Image src={song.cover} alt={song.title} fill className="object-cover" />
+        )}
         {onPlay && (
           <button
-            onClick={() => onPlay(song)}
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              onPlay(song);
+            }}
             className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 transition-opacity group-hover:opacity-100"
           >
             <Play size={18} fill="white" className="text-white" />
@@ -54,7 +80,11 @@ export function SongCard({ song, onPlay, showArtist = true, index }: SongCardPro
       <div className="min-w-0 flex-1">
         <p className="truncate text-sm font-medium text-white">{song.title}</p>
         {showArtist && (
-          <Link href={`/artist/${song.artistId}`} className="truncate text-xs text-white/50 hover:underline">
+          <Link
+            href={`/artist/${song.artistId}`}
+            onClick={(e) => e.stopPropagation()}
+            className="truncate text-xs text-white/50 hover:underline"
+          >
             {song.artistName}
           </Link>
         )}
@@ -99,7 +129,7 @@ export function ArtistCard({ artist }: ArtistCardProps) {
         <Image src={artist.image} alt={artist.name} fill className="object-cover transition-transform group-hover:scale-105" />
       </div>
       <p className="truncate text-sm font-medium text-white">{artist.name}</p>
-      <p className="text-xs text-white/50">Artist</p>
+      <p className="text-xs text-white/50">{formatNumber(artist.monthlyListeners)} plays</p>
     </Link>
   );
 }

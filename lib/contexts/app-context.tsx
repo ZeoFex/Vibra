@@ -7,10 +7,12 @@ import {
   useCallback,
   useEffect,
   useMemo,
+  useRef,
   type ReactNode,
 } from "react";
 import type { Song, DownloadedTrack } from "@/types";
 import type { User } from "@/types";
+import { resolveAudioUrl } from "@/lib/audio/resolve-audio-url";
 
 type RepeatMode = "off" | "all" | "one";
 
@@ -56,6 +58,9 @@ interface PlayerContextValue extends PlayerState {
 const PlayerContext = createContext<PlayerContextValue | null>(null);
 
 export function PlayerProvider({ children }: { children: ReactNode }) {
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const loadedSongIdRef = useRef<string | null>(null);
+
   const [state, setState] = useState<PlayerState>({
     currentSong: null,
     queue: [],
@@ -76,19 +81,124 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   });
 
   useEffect(() => {
-    if (!state.isPlaying || !state.currentSong) return;
-    const interval = setInterval(() => {
+    if (!audioRef.current) {
+      audioRef.current = new Audio();
+      audioRef.current.preload = "auto";
+    }
+    const audio = audioRef.current;
+
+    const onTimeUpdate = () => {
+      setState((prev) => {
+        if (!prev.currentSong || loadedSongIdRef.current !== prev.currentSong.id) return prev;
+        return { ...prev, progress: Math.floor(audio.currentTime) };
+      });
+    };
+
+    const onEnded = () => {
       setState((prev) => {
         if (!prev.currentSong) return prev;
-        const newProgress = prev.progress + 1;
-        if (newProgress >= prev.currentSong.duration) {
-          return { ...prev, progress: 0, isPlaying: false };
+
+        if (prev.repeat === "one") {
+          audio.currentTime = 0;
+          void audio.play();
+          return { ...prev, progress: 0, isPlaying: true };
         }
-        return { ...prev, progress: newProgress };
+
+        if (!prev.queue.length) {
+          return { ...prev, isPlaying: false, progress: 0 };
+        }
+
+        const idx = prev.queue.findIndex((s) => s.id === prev.currentSong!.id);
+        let nextIdx = idx + 1;
+        if (nextIdx >= prev.queue.length) {
+          if (prev.repeat === "all") nextIdx = 0;
+          else return { ...prev, isPlaying: false, progress: 0 };
+        }
+
+        return {
+          ...prev,
+          currentSong: prev.queue[nextIdx],
+          progress: 0,
+          isPlaying: true,
+        };
       });
-    }, 1000);
-    return () => clearInterval(interval);
-  }, [state.isPlaying, state.currentSong]);
+    };
+
+    audio.addEventListener("timeupdate", onTimeUpdate);
+    audio.addEventListener("ended", onEnded);
+    return () => {
+      audio.removeEventListener("timeupdate", onTimeUpdate);
+      audio.removeEventListener("ended", onEnded);
+    };
+  }, []);
+
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio) return;
+
+    audio.volume = state.volume / 100;
+  }, [state.volume]);
+
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio) return;
+
+    if (!state.currentSong) {
+      audio.pause();
+      audio.removeAttribute("src");
+      loadedSongIdRef.current = null;
+      return;
+    }
+
+    if (loadedSongIdRef.current === state.currentSong.id) return;
+
+    let cancelled = false;
+    loadedSongIdRef.current = null;
+
+    void (async () => {
+      const url = await resolveAudioUrl(state.currentSong!);
+      if (cancelled || !url) {
+        if (!cancelled) setState((prev) => ({ ...prev, isPlaying: false }));
+        return;
+      }
+
+      audio.src = url;
+      audio.load();
+      loadedSongIdRef.current = state.currentSong!.id;
+
+      const onLoaded = () => {
+        if (cancelled) return;
+        if (Number.isFinite(audio.duration) && audio.duration > 0) {
+          setState((prev) => {
+            if (!prev.currentSong || prev.currentSong.id !== loadedSongIdRef.current) return prev;
+            return {
+              ...prev,
+              currentSong: { ...prev.currentSong, duration: Math.round(audio.duration) },
+            };
+          });
+        }
+        setState((prev) => {
+          if (!prev.currentSong || prev.currentSong.id !== loadedSongIdRef.current) return prev;
+          if (prev.isPlaying) void audio.play().catch(() => {});
+          return prev;
+        });
+      };
+
+      audio.addEventListener("loadedmetadata", onLoaded, { once: true });
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [state.currentSong?.id]);
+
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio || !state.currentSong || loadedSongIdRef.current !== state.currentSong.id) return;
+
+    if (state.isPlaying) void audio.play().catch(() => {});
+    else audio.pause();
+  }, [state.isPlaying, state.currentSong?.id]);
 
   const play = useCallback((song: Song, queue?: Song[]) => {
     setState((prev) => ({
@@ -102,6 +212,12 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const closePlayer = useCallback(() => {
+    const audio = audioRef.current;
+    if (audio) {
+      audio.pause();
+      audio.removeAttribute("src");
+    }
+    loadedSongIdRef.current = null;
     setState((prev) => ({
       ...prev,
       currentSong: null,
@@ -135,10 +251,13 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   const previous = useCallback(() => {
     setState((prev) => {
       if (!prev.queue.length || !prev.currentSong) return prev;
-      if (prev.progress > 3) return { ...prev, progress: 0 };
+      if (prev.progress > 3) {
+        if (audioRef.current) audioRef.current.currentTime = 0;
+        return { ...prev, progress: 0 };
+      }
       const idx = prev.queue.findIndex((s) => s.id === prev.currentSong!.id);
       const prevIdx = idx <= 0 ? prev.queue.length - 1 : idx - 1;
-      return { ...prev, currentSong: prev.queue[prevIdx], progress: 0 };
+      return { ...prev, currentSong: prev.queue[prevIdx], progress: 0, isPlaying: true };
     });
   }, []);
 
@@ -159,6 +278,10 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const seek = useCallback((progress: number) => {
+    const audio = audioRef.current;
+    if (audio && loadedSongIdRef.current) {
+      audio.currentTime = progress;
+    }
     setState((prev) => ({ ...prev, progress }));
   }, []);
 

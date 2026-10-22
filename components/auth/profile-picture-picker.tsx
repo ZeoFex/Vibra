@@ -37,21 +37,23 @@ export function ProfilePicturePicker({
   }, [file]);
 
   return (
-    <div className={cn("flex flex-col items-center gap-3", className)}>
-      <p className="text-sm text-white/70">
-        {label}
-        {required ? " *" : " (optional)"}
-      </p>
+    <div className={cn("flex items-center gap-4", className)}>
       <button
         type="button"
         onClick={() => inputRef.current?.click()}
-        className="group relative h-24 w-24 overflow-hidden rounded-full border-2 border-dashed border-white/20 bg-white/5 transition-colors hover:border-violet-500"
+        className="group relative h-16 w-16 shrink-0 overflow-hidden rounded-full bg-white/10"
       >
         <Image src={preview} alt="Profile preview" fill className="object-cover" sizes="96px" />
         <span className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 transition-opacity group-hover:opacity-100">
           <Camera size={22} className="text-white" />
         </span>
       </button>
+      <p className="text-sm font-bold">
+        {label}
+        <span className="mt-0.5 block text-xs font-medium text-white/50">
+          {required ? "Required" : "Optional"}
+        </span>
+      </p>
       <input
         ref={inputRef}
         type="file"
@@ -59,9 +61,6 @@ export function ProfilePicturePicker({
         className="hidden"
         onChange={(e) => onFileChange(e.target.files?.[0] ?? null)}
       />
-      <p className="text-center text-xs text-white/40">
-        {file ? file.name : "Tap to add a photo (max 5MB)"}
-      </p>
     </div>
   );
 }

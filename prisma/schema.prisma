@@ -113,6 +113,19 @@ model ArtistUpload {
   copyrightConfirmed Boolean      @default(false) @map("copyright_confirmed")
   status             UploadStatus @default(pending)
   submittedAt        DateTime     @default(now()) @map("submitted_at")
+  audio              ArtistUploadAudio?
 
   @@map("artist_uploads")
+}
+
+model ArtistUploadAudio {
+  uploadId  String       @id @map("upload_id")
+  upload    ArtistUpload @relation(fields: [uploadId], references: [id], onDelete: Cascade)
+  data      Bytes
+  mimeType  String       @map("mime_type")
+  sizeBytes Int          @map("size_bytes")
+  storage   String       @default("database")
+  createdAt DateTime     @default(now()) @map("created_at")
+
+  @@map("artist_upload_audio")
 }

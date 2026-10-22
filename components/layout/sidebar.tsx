@@ -24,6 +24,7 @@ import { cn } from "@/lib/utils";
 import { useAuth } from "@/lib/contexts/app-context";
 import { useSocial } from "@/lib/contexts/social-context";
 import { Button } from "@/components/ui/button";
+import { VibraLogo } from "@/components/brand/vibra-logo";
 
 const navItems = [
   { href: "/home", label: "Home", icon: Home },
@@ -48,14 +49,9 @@ export function Sidebar({ mobileOpen, setMobileOpen }: SidebarProps) {
 
   const NavContent = () => (
     <>
-      <Link href="/home" className="mb-8 flex items-center gap-2 px-2" onClick={() => setMobileOpen(false)}>
-        <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-violet-600 to-fuchsia-600">
-          <span className="text-lg font-bold text-white">V</span>
-        </div>
-        <div>
-          <span className="text-xl font-bold text-white">Vibra</span>
-          <p className="text-xs text-white/40">Feel Every Beat</p>
-        </div>
+      <Link href="/home" className="mb-8 flex items-center gap-3 px-2" onClick={() => setMobileOpen(false)}>
+        <VibraLogo size={48} />
+        <p className="text-xs text-white/40">Feel Every Beat</p>
       </Link>
 
       <nav className="flex flex-1 flex-col gap-1">
@@ -138,7 +134,7 @@ export function Sidebar({ mobileOpen, setMobileOpen }: SidebarProps) {
         </div>
       )}
 
-      <aside className="hidden w-64 shrink-0 flex-col border-r border-white/10 bg-black/40 p-4 backdrop-blur-xl lg:flex">
+      <aside className="hidden h-full w-64 shrink-0 flex-col overflow-hidden border-r border-white/10 bg-black/40 p-4 backdrop-blur-xl lg:flex">
         <NavContent />
       </aside>
     </>
@@ -171,7 +167,7 @@ export function TopBar({ onMenuClick }: TopBarProps) {
       .find(([k]) => pathname === k || pathname.startsWith(k + "/"))?.[1] ?? "Vibra";
 
   return (
-    <header className="sticky top-0 z-40 flex items-center justify-between gap-2 border-b border-white/5 bg-black/40 px-3 py-3 backdrop-blur-xl sm:px-4 md:px-6">
+    <header className="flex shrink-0 items-center justify-between gap-2 border-b border-white/5 bg-black/40 px-3 py-3 backdrop-blur-xl sm:px-4 md:px-6">
       <div className="flex min-w-0 flex-1 items-center gap-1 sm:gap-2">
         <button
           onClick={onMenuClick}
