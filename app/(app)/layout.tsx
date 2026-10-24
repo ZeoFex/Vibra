@@ -4,6 +4,7 @@ import { Sidebar, TopBar } from "@/components/layout/sidebar";
 import { PlayerBar } from "@/components/layout/player-bar";
 import { useAuth, usePlayer } from "@/lib/contexts/app-context";
 import { SocialProvider } from "@/lib/contexts/social-context";
+import { NotificationProvider } from "@/lib/contexts/notification-context";
 import { ChatProvider } from "@/lib/contexts/chat-context";
 import { useRouter, usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -34,8 +35,12 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
   return (
     <SocialProvider>
+      <NotificationProvider>
       <ChatProvider>
-        <div className="flex h-dvh overflow-hidden gradient-bg">
+        <div
+          className="flex h-dvh overflow-hidden gradient-bg"
+          style={{ ["--share-lift" as string]: isPlayerBarVisible ? "var(--app-chrome-bottom)" : "0px" }}
+        >
           <Sidebar mobileOpen={mobileOpen} setMobileOpen={setMobileOpen} />
           <div className="flex min-h-0 min-w-0 flex-1 flex-col">
             <TopBar onMenuClick={() => setMobileOpen(true)} />
@@ -46,6 +51,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           <PlayerBar />
         </div>
       </ChatProvider>
+      </NotificationProvider>
     </SocialProvider>
   );
 }

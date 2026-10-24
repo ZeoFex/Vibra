@@ -1,26 +1,13 @@
 "use client";
 
-import {
-  createContext,
-  useContext,
-  useState,
-  useCallback,
-  useMemo,
-  type ReactNode,
-} from "react";
-import type { SocialProfile, FriendRequest } from "@/types";
-import {
-  initialFriendRequests,
-  searchProfilesByUsername,
-  getRecommendations,
-} from "@/lib/mock-data/social";
-import { initialFriends } from "@/lib/mock-data/chat";
-import { usePlayer } from "@/lib/contexts/app-context";
+import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
+import type { FriendRequest, SocialProfile } from "@/types";
 
 interface SocialContextValue {
   friends: SocialProfile[];
   friendRequests: FriendRequest[];
   pendingCount: number;
+  ready: boolean;
   searchUsers: (query: string) => SocialProfile[];
   recommendations: { profile: SocialProfile; reason: string; score: number }[];
   sendFriendRequest: (profile: SocialProfile) => void;
@@ -33,79 +20,84 @@ interface SocialContextValue {
 
 const SocialContext = createContext<SocialContextValue | null>(null);
 
-const CURRENT_USER_ID = "user-1";
-
 export function SocialProvider({ children }: { children: ReactNode }) {
-  const { likedSongs, likedArtists } = usePlayer();
-  const [friendRequests, setFriendRequests] = useState<FriendRequest[]>(initialFriendRequests);
-  const [friends, setFriends] = useState<SocialProfile[]>(initialFriends);
+  const [friends, setFriends] = useState<SocialProfile[]>([]);
+  const [friendRequests, setFriendRequests] = useState<FriendRequest[]>([]);
+  const [people, setPeople] = useState<SocialProfile[]>([]);
   const [sentRequestIds, setSentRequestIds] = useState<Set<string>>(new Set());
+  const [ready, setReady] = useState(false);
 
-  const likedSongIds = useMemo(() => Array.from(likedSongs), [likedSongs]);
-  const likedArtistIds = useMemo(() => Array.from(likedArtists), [likedArtists]);
-  const friendIds = useMemo(() => friends.map((f) => f.id), [friends]);
+  const refresh = useCallback(async () => {
+    const response = await fetch("/api/social", { credentials: "include" });
+    if (!response.ok) return;
+    const data = (await response.json()) as {
+      friends?: SocialProfile[];
+      incoming?: FriendRequest[];
+      people?: SocialProfile[];
+      sentIds?: string[];
+    };
+    setFriends(data.friends ?? []);
+    setFriendRequests(data.incoming ?? []);
+    setPeople(data.people ?? []);
+    setSentRequestIds(new Set(data.sentIds ?? []));
+    setReady(true);
+  }, []);
 
-  const pendingCount = friendRequests.filter((r) => r.status === "pending").length;
+  useEffect(() => {
+    void refresh();
+    const timer = window.setInterval(() => void refresh(), 5000);
+    return () => window.clearInterval(timer);
+  }, [refresh]);
 
-  const recommendations = useMemo(
-    () =>
-      getRecommendations(likedSongIds, likedArtistIds, [
-        ...friendIds,
-        ...sentRequestIds,
-        ...friendRequests.filter((r) => r.status === "pending").map((r) => r.from.id),
-      ], CURRENT_USER_ID),
-    [likedSongIds, likedArtistIds, friendIds, sentRequestIds, friendRequests]
-  );
+  const friendIds = useMemo(() => new Set(friends.map((friend) => friend.id)), [friends]);
+  const pendingCount = friendRequests.filter((request) => request.status === "pending").length;
 
   const searchUsers = useCallback(
     (query: string) => {
-      const results = searchProfilesByUsername(query, CURRENT_USER_ID);
-      return results.filter(
-        (p) => !friendIds.includes(p.id) && !sentRequestIds.has(p.id)
+      const term = query.trim().toLowerCase();
+      if (!term) return [];
+      return people.filter(
+        (person) =>
+          !friendIds.has(person.id) &&
+          (person.username.toLowerCase().includes(term) || person.name.toLowerCase().includes(term))
       );
     },
-    [friendIds, sentRequestIds]
+    [people, friendIds]
+  );
+
+  const recommendations = useMemo(
+    () =>
+      people
+        .filter((person) => !friendIds.has(person.id) && !sentRequestIds.has(person.id))
+        .slice(0, 8)
+        .map((profile) => ({ profile, reason: "Member of Vibra", score: 1 })),
+    [people, friendIds, sentRequestIds]
   );
 
   const sendFriendRequest = useCallback((profile: SocialProfile) => {
     setSentRequestIds((prev) => new Set(prev).add(profile.id));
-  }, []);
+    void fetch("/api/social/requests", {
+      method: "POST",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ toUserId: profile.id }),
+    }).then(() => refresh());
+  }, [refresh]);
 
   const acceptRequest = useCallback((requestId: string) => {
-    setFriendRequests((prev) => {
-      const req = prev.find((r) => r.id === requestId);
-      if (req) {
-        setFriends((f) => [...f, req.from]);
-      }
-      return prev.map((r) =>
-        r.id === requestId ? { ...r, status: "accepted" as const } : r
-      );
-    });
-  }, []);
+    void fetch(`/api/social/requests/${requestId}/accept`, { method: "POST", credentials: "include" }).then(() => refresh());
+  }, [refresh]);
 
   const declineRequest = useCallback((requestId: string) => {
-    setFriendRequests((prev) =>
-      prev.map((r) =>
-        r.id === requestId ? { ...r, status: "declined" as const } : r
-      )
-    );
-  }, []);
+    void fetch(`/api/social/requests/${requestId}/decline`, { method: "POST", credentials: "include" }).then(() => refresh());
+  }, [refresh]);
 
-  const isFriend = useCallback(
-    (userId: string) => friends.some((f) => f.id === userId),
-    [friends]
-  );
-
+  const isFriend = useCallback((userId: string) => friendIds.has(userId), [friendIds]);
   const hasPendingRequest = useCallback(
-    (userId: string) =>
-      friendRequests.some((r) => r.from.id === userId && r.status === "pending"),
+    (userId: string) => friendRequests.some((request) => request.from.id === userId && request.status === "pending"),
     [friendRequests]
   );
-
-  const hasSentRequest = useCallback(
-    (userId: string) => sentRequestIds.has(userId),
-    [sentRequestIds]
-  );
+  const hasSentRequest = useCallback((userId: string) => sentRequestIds.has(userId), [sentRequestIds]);
 
   return (
     <SocialContext.Provider
@@ -113,6 +105,7 @@ export function SocialProvider({ children }: { children: ReactNode }) {
         friends,
         friendRequests,
         pendingCount,
+        ready,
         searchUsers,
         recommendations,
         sendFriendRequest,

@@ -1,20 +1,7 @@
 "use client";
 
-import {
-  createContext,
-  useContext,
-  useState,
-  useCallback,
-  useMemo,
-  type ReactNode,
-} from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import type { ChatMessage, SocialProfile } from "@/types";
-import {
-  initialPrivateMessages,
-  initialCommunityMessages,
-  communityAutoReplies,
-} from "@/lib/mock-data/chat";
-import { socialProfiles } from "@/lib/mock-data/social";
 import { useAuth } from "@/lib/contexts/app-context";
 import { useSocial } from "@/lib/contexts/social-context";
 
@@ -36,122 +23,74 @@ interface ChatContextValue {
 
 const ChatContext = createContext<ChatContextValue | null>(null);
 
-function createMessage(
-  sender: { id: string; name: string; avatar: string; username: string },
-  content: string
-): ChatMessage {
-  return {
-    id: `msg-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
-    senderId: sender.id,
-    senderName: sender.name,
-    senderAvatar: sender.avatar,
-    senderUsername: sender.username,
-    content,
-    createdAt: new Date().toISOString(),
-  };
-}
-
 export function ChatProvider({ children }: { children: ReactNode }) {
   const { user } = useAuth();
   const { friends, isFriend } = useSocial();
-  const [privateMessages, setPrivateMessages] = useState<Record<string, ChatMessage[]>>(initialPrivateMessages);
-  const [communityMessages, setCommunityMessages] = useState<ChatMessage[]>(initialCommunityMessages);
+  const [threads, setThreads] = useState<Record<string, ChatMessage[]>>({});
+  const [communityMessages, setCommunityMessages] = useState<ChatMessage[]>([]);
   const [readAt, setReadAt] = useState<Record<string, string>>({});
 
-  const currentUser = useMemo(
-    () => ({
-      id: user?.id ?? "user-1",
-      name: user?.name ?? "Alex Rivera",
-      avatar: user?.avatar ?? "",
-      username: user?.username ?? "alexrivera",
-    }),
-    [user]
-  );
+  const refresh = useCallback(async () => {
+    const response = await fetch("/api/social/messages", { credentials: "include" });
+    if (!response.ok) return;
+    const data = (await response.json()) as { threads?: Record<string, ChatMessage[]>; community?: ChatMessage[] };
+    setThreads(data.threads ?? {});
+    setCommunityMessages(data.community ?? []);
+  }, []);
+
+  useEffect(() => {
+    void refresh();
+    const timer = window.setInterval(() => void refresh(), 4000);
+    return () => window.clearInterval(timer);
+  }, [refresh]);
 
   const sendPrivateMessage = useCallback(
     (friendId: string, content: string) => {
       if (!isFriend(friendId) || !content.trim()) return;
-      const msg = createMessage(currentUser, content.trim());
-      setPrivateMessages((prev) => ({
-        ...prev,
-        [friendId]: [...(prev[friendId] ?? []), msg],
-      }));
+      void fetch("/api/social/messages", {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ toUserId: friendId, content: content.trim() }),
+      }).then(() => refresh());
       setReadAt((prev) => ({ ...prev, [friendId]: new Date().toISOString() }));
-
-      const friend = friends.find((f) => f.id === friendId);
-      if (friend) {
-        setTimeout(() => {
-          const reply = communityAutoReplies[Math.floor(Math.random() * communityAutoReplies.length)];
-          setPrivateMessages((prev) => ({
-            ...prev,
-            [friendId]: [...(prev[friendId] ?? []), createMessage(friend, reply)],
-          }));
-        }, 1500);
-      }
     },
-    [currentUser, friends, isFriend]
+    [isFriend, refresh]
   );
 
   const sendCommunityMessage = useCallback(
     (content: string) => {
       if (!content.trim()) return;
-      const msg = createMessage(currentUser, content.trim());
-      setCommunityMessages((prev) => [...prev, msg]);
-
-      setTimeout(() => {
-        const randomUser = socialProfiles[Math.floor(Math.random() * socialProfiles.length)];
-        if (randomUser.id !== currentUser.id) {
-          const replies = [
-            "Love this take!",
-            "Same energy 🙌",
-            "Couldn't have said it better",
-            "Facts!",
-          ];
-          setCommunityMessages((prev) => [
-            ...prev,
-            createMessage(
-              randomUser,
-              replies[Math.floor(Math.random() * replies.length)]
-            ),
-          ]);
-        }
-      }, 2000);
+      void fetch("/api/social/messages", {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ community: true, content: content.trim() }),
+      }).then(() => refresh());
     },
-    [currentUser]
+    [refresh]
   );
 
-  const getPrivateMessages = useCallback(
-    (friendId: string) => privateMessages[friendId] ?? [],
-    [privateMessages]
-  );
-
+  const getPrivateMessages = useCallback((friendId: string) => threads[friendId] ?? [], [threads]);
   const markConversationRead = useCallback((friendId: string) => {
     setReadAt((prev) => ({ ...prev, [friendId]: new Date().toISOString() }));
   }, []);
 
   const conversations = useMemo((): ConversationPreview[] => {
-    return friends.map((friend) => {
-      const messages = privateMessages[friend.id] ?? [];
-      const lastMessage = messages[messages.length - 1];
-      const lastRead = readAt[friend.id];
-      const unreadCount = lastRead
-        ? messages.filter(
-            (m) => m.senderId !== currentUser.id && m.createdAt > lastRead
-          ).length
-        : messages.filter((m) => m.senderId !== currentUser.id).length;
+    return friends
+      .map((friend) => {
+        const messages = threads[friend.id] ?? [];
+        const lastMessage = messages[messages.length - 1];
+        const lastRead = readAt[friend.id];
+        const unreadCount = messages.filter(
+          (message) => message.senderId !== user?.id && (!lastRead || message.createdAt > lastRead)
+        ).length;
+        return { friend, lastMessage, unreadCount };
+      })
+      .sort((a, b) => (b.lastMessage?.createdAt ?? "").localeCompare(a.lastMessage?.createdAt ?? ""));
+  }, [friends, threads, readAt, user?.id]);
 
-      return { friend, lastMessage, unreadCount };
-    }).sort((a, b) => {
-      const aTime = a.lastMessage?.createdAt ?? "";
-      const bTime = b.lastMessage?.createdAt ?? "";
-      return bTime.localeCompare(aTime);
-    });
-  }, [friends, privateMessages, readAt, currentUser.id]);
-
-  const totalUnreadMessages = useMemo(
-    () => conversations.reduce((acc, c) => acc + c.unreadCount, 0),
-    [conversations]
-  );
+  const totalUnreadMessages = conversations.reduce((sum, conversation) => sum + conversation.unreadCount, 0);
 
   return (
     <ChatContext.Provider

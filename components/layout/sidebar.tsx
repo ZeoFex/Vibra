@@ -6,13 +6,13 @@ import {
   Home,
   Search,
   Library,
-  Sparkles,
   Crown,
   Bell,
   Disc3,
   Users,
   Settings,
   LogOut,
+  Mic,
   Mic2,
   ChevronLeft,
   ChevronRight,
@@ -23,6 +23,7 @@ import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/lib/contexts/app-context";
 import { useSocial } from "@/lib/contexts/social-context";
+import { useNotifications } from "@/lib/contexts/notification-context";
 import { Button } from "@/components/ui/button";
 import { VibraLogo } from "@/components/brand/vibra-logo";
 
@@ -30,8 +31,9 @@ const navItems = [
   { href: "/home", label: "Home", icon: Home },
   { href: "/search", label: "Search", icon: Search },
   { href: "/library", label: "Library", icon: Library },
+  { href: "/recordings", label: "Recordings", icon: Mic },
   { href: "/albums", label: "Albums", icon: Disc3 },
-  { href: "/ai", label: "Vibra AI", icon: Sparkles },
+  { href: "/ai", label: "Vibra AI", icon: null },
   { href: "/social", label: "Social", icon: Users },
   { href: "/notifications", label: "Notifications", icon: Bell },
   { href: "/premium", label: "Premium", icon: Crown },
@@ -46,11 +48,12 @@ export function Sidebar({ mobileOpen, setMobileOpen }: SidebarProps) {
   const pathname = usePathname();
   const { user, logout } = useAuth();
   const { pendingCount } = useSocial();
+  const { unreadCount } = useNotifications();
 
-  const NavContent = () => (
+  const renderNav = () => (
     <>
       <Link href="/home" className="mb-8 flex items-center gap-3 px-2" onClick={() => setMobileOpen(false)}>
-        <VibraLogo size={48} />
+        <VibraLogo size={64} className="h-16 w-16 rounded-2xl" />
         <p className="text-xs text-white/40">Feel Every Beat</p>
       </Link>
 
@@ -67,11 +70,16 @@ export function Sidebar({ mobileOpen, setMobileOpen }: SidebarProps) {
                 : "text-white/60 hover:bg-white/5 hover:text-white"
             )}
           >
-            <Icon size={20} />
+            {href === "/ai" ? <VibraLogo size={20} className="h-5 w-5 rounded-md" /> : Icon && <Icon size={20} />}
             {label}
             {href === "/social" && pendingCount > 0 && (
               <span className="ml-auto flex h-5 min-w-5 items-center justify-center rounded-full bg-violet-600 px-1.5 text-xs font-bold">
                 {pendingCount}
+              </span>
+            )}
+            {href === "/notifications" && unreadCount > 0 && (
+              <span className="ml-auto flex h-5 min-w-5 items-center justify-center rounded-full bg-violet-600 px-1.5 text-xs font-bold">
+                {unreadCount}
               </span>
             )}
           </Link>
@@ -129,13 +137,13 @@ export function Sidebar({ mobileOpen, setMobileOpen }: SidebarProps) {
             >
               <X size={20} />
             </button>
-            <NavContent />
+            {renderNav()}
           </aside>
         </div>
       )}
 
       <aside className="hidden h-full w-64 shrink-0 flex-col overflow-hidden border-r border-white/10 bg-black/40 p-4 backdrop-blur-xl lg:flex">
-        <NavContent />
+        {renderNav()}
       </aside>
     </>
   );
@@ -146,50 +154,34 @@ interface TopBarProps {
 }
 
 export function TopBar({ onMenuClick }: TopBarProps) {
-  const pathname = usePathname();
-  const titles: Record<string, string> = {
-    "/home": "Home",
-    "/search": "Search",
-    "/library": "Your Library",
-    "/albums": "Albums",
-    "/ai": "Vibra AI",
-    "/social": "Social",
-    "/social/messages": "Messages",
-    "/social/community": "Community Chat",
-    "/social/requests": "Friend Requests",
-    "/notifications": "Notifications",
-    "/premium": "Premium",
-    "/profile": "Profile",
-  };
-  const title =
-    Object.entries(titles)
-      .sort(([a], [b]) => b.length - a.length)
-      .find(([k]) => pathname === k || pathname.startsWith(k + "/"))?.[1] ?? "Vibra";
-
   return (
     <header className="flex shrink-0 items-center justify-between gap-2 border-b border-white/5 bg-black/40 px-3 py-3 backdrop-blur-xl sm:px-4 md:px-6">
       <div className="flex min-w-0 flex-1 items-center gap-1 sm:gap-2">
         <button
           onClick={onMenuClick}
-          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white/10 lg:hidden"
+          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-violet-400/40 bg-[#5b21b6] lg:hidden"
           aria-label="Open menu"
         >
-          <Menu size={20} className="text-white" />
+          <Menu size={20} className="text-violet-200" />
         </button>
+        <Link href="/home" className="shrink-0 lg:hidden" aria-label="Vibra home">
+          <VibraLogo size={44} className="h-11 w-11 rounded-xl" />
+        </Link>
         <Button variant="ghost" size="icon-sm" className="hidden md:flex">
           <ChevronLeft size={18} />
         </Button>
         <Button variant="ghost" size="icon-sm" className="hidden md:flex">
           <ChevronRight size={18} />
         </Button>
-        <h1 className="truncate text-base font-semibold text-white sm:text-lg md:text-xl">{title}</h1>
       </div>
-      <Link href="/premium" className="shrink-0">
-        <Button variant="premium" size="sm" className="gap-1 px-3 sm:px-4">
-          <Crown size={14} />
-          <span className="hidden sm:inline">Upgrade</span>
-        </Button>
-      </Link>
+      <div className="flex shrink-0 items-center gap-2">
+        <Link href="/premium">
+          <Button variant="premium" size="sm" className="gap-1 px-3 sm:px-4">
+            <Crown size={14} />
+            <span className="hidden sm:inline">Upgrade</span>
+          </Button>
+        </Link>
+      </div>
     </header>
   );
 }

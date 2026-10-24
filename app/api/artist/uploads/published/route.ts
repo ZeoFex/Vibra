@@ -7,7 +7,7 @@ export async function GET() {
   const uploads = await prisma.artistUpload.findMany({
     where: { status: "published" },
     orderBy: [{ albumGroupId: "asc" }, { trackNumber: "asc" }, { submittedAt: "desc" }],
-    take: 200,
+    take: 1000,
     include: {
       audio: {
         select: { uploadId: true },
@@ -36,7 +36,7 @@ export async function GET() {
     return {
       ...song,
       duration: upload?.duration ?? 180,
-      audioUrl: upload?.audio ? getUploadAudioPath(upload.id) : undefined,
+      audioUrl: upload?.audioUrl ?? (upload?.audio ? getUploadAudioPath(upload.id) : undefined),
     };
   });
 

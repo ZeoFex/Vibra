@@ -14,8 +14,8 @@
   --color-foreground: var(--foreground);
   --color-violet-accent: var(--violet-accent);
   --color-deep-blue: var(--deep-blue);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: ui-sans-serif, system-ui, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, monospace;
 }
 
 html {
@@ -103,6 +103,42 @@ body {
 
 .animate-float {
   animation: float 4s ease-in-out infinite;
+}
+
+@keyframes splash-in {
+  from {
+    opacity: 0;
+    transform: scale(0.92);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.splash-mark {
+  animation: splash-in 0.7s ease-out both;
+}
+
+@keyframes voice-wave {
+  0% {
+    transform: scale(1);
+    opacity: 0.55;
+  }
+  100% {
+    transform: scale(1.9);
+    opacity: 0;
+  }
+}
+
+.voice-wave {
+  animation: voice-wave 2.2s ease-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .splash-mark {
+    animation: none;
+  }
 }
 
 input[type="range"]::-webkit-slider-thumb {

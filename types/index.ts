@@ -11,6 +11,17 @@ export interface User {
   followers: number;
   following: number;
   createdAt: string;
+  preferences?: UserPreferences;
+}
+
+export interface UserPreferences {
+  emailNotifications: boolean;
+  newMusic: boolean;
+  friendActivity: boolean;
+  privateProfile: boolean;
+  explicitContent: boolean;
+  autoplay: boolean;
+  highQuality: boolean;
 }
 
 export interface SocialProfile {

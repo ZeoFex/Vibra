@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from "react";
 import Image from "next/image";
-import { Search, UserPlus, Check, Music, Sparkles } from "lucide-react";
+import { Search, UserPlus, Check, Music, User } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useSocial } from "@/lib/contexts/social-context";
@@ -111,15 +111,15 @@ export default function FindFriendsPage() {
 
       <section>
         <div className="mb-4 flex items-center gap-2">
-          <Sparkles size={18} className="text-violet-400" />
-          <h2 className="text-lg font-semibold">Recommended Based on Your Taste</h2>
+          <User size={18} className="text-violet-400" />
+          <h2 className="text-lg font-semibold">People on Vibra</h2>
         </div>
         <p className="mb-4 text-sm text-white/50">
-          People who like the same songs and artists as you
+          Other accounts you can add
         </p>
         <div className="space-y-3">
           {recommendations.length === 0 ? (
-            <p className="text-sm text-white/50">Like more songs and artists to get recommendations.</p>
+            <p className="text-sm text-white/50">No other accounts yet. Create another user to send a request.</p>
           ) : (
             recommendations.map(({ profile, reason }) => (
               <UserCard

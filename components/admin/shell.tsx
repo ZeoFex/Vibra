@@ -36,6 +36,7 @@ const navItems: { href: string; label: string; icon: React.ComponentType<{ size?
   { href: "/admin", label: "Overview", icon: LayoutDashboard, permission: "overview" },
   { href: "/admin/verification", label: "Verification", icon: ShieldCheck, permission: "verification" },
   { href: "/admin/music-review", label: "Music Review", icon: Music, permission: "music-review" },
+  { href: "/admin/uploads", label: "Upload Music", icon: Music, permission: "music-review" },
   { href: "/admin/users", label: "Users", icon: Users, permission: "users" },
   { href: "/admin/artists", label: "Artists", icon: Mic2, permission: "artists" },
   { href: "/admin/artist-accounts", label: "Reviewers", icon: UserPlus, permission: "sub-admins" },
@@ -81,7 +82,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
 
   const filteredNav = filterNav(admin!.role);
 
-  const NavLinks = () => (
+  const renderNav = () => (
     <nav className="flex-1 space-y-0.5 overflow-y-auto">
       {filteredNav.map(({ href, label, icon: Icon }) => {
         const active = href === "/admin" ? pathname === href : pathname.startsWith(href);
@@ -119,7 +120,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
               <p className="text-xs text-white/40">Control Center</p>
             </div>
           </div>
-          <NavLinks />
+          {renderNav()}
           <div className="mt-auto border-t border-white/10 pt-4">
             <div className="flex items-center gap-3 rounded-lg px-2 py-2">
               <Image src={admin!.avatar} alt="" width={32} height={32} className="rounded-full" />
@@ -143,7 +144,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
           <aside className="relative flex h-full w-[min(18rem,85vw)] flex-col bg-zinc-950 p-4">
             <button onClick={() => setMobileOpen(false)} className="absolute right-4 top-4"><X size={20} /></button>
             <div className="mb-6 mt-8 font-bold">Vibra Admin</div>
-            <NavLinks />
+            {renderNav()}
           </aside>
         </div>
       )}

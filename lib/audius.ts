@@ -174,6 +174,22 @@ export async function loadAudiusBrowse(): Promise<{ albums: Album[]; artists: Ar
   return { albums, artists, genres, songs };
 }
 
+export async function loadAudiusAlbums(): Promise<Album[]> {
+  const offsets = [0, 50, 100];
+  const pages = await Promise.all(
+    offsets.map((offset) =>
+      audiusGet<{ data?: AudiusPlaylist[] }>(`/playlists/trending?limit=50&offset=${offset}`)
+    )
+  );
+  const seen = new Set<string>();
+  return pages
+    .flatMap((page) => page?.data ?? [])
+    .map((playlist) => ({ playlist, album: toAlbum(playlist) }))
+    .filter((entry): entry is { playlist: AudiusPlaylist; album: Album } => entry.album !== null && !seen.has(entry.album.id) && (seen.add(entry.album.id), true))
+    .sort((a, b) => (b.playlist.total_play_count || 0) - (a.playlist.total_play_count || 0))
+    .map((entry) => entry.album);
+}
+
 export async function loadAudiusPlaylist(playlistId: string): Promise<{ album: Album; songs: Song[] } | null> {
   const [playlistBody, tracksBody] = await Promise.all([
     audiusGet<{ data?: AudiusPlaylist[] | AudiusPlaylist }>(`/playlists?id=${encodeURIComponent(playlistId)}`),

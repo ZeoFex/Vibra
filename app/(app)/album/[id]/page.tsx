@@ -2,7 +2,7 @@
 
 import { use, useEffect, useState } from "react";
 import Image from "next/image";
-import { Heart, Share2 } from "lucide-react";
+import { Heart } from "lucide-react";
 import { getAlbumById as getStaticAlbumById } from "@/lib/mock-data/albums";
 import { getSongsByAlbum as getStaticSongsByAlbum } from "@/lib/mock-data/songs";
 import { usePlayer } from "@/lib/contexts/app-context";
@@ -16,14 +16,20 @@ import type { Album, Song } from "@/types";
 export default function AlbumPage({ params }: { params: Promise<{ id: string }> }) {
   const albumId = use(params).id;
   const audiusPlaylistId = albumId.startsWith("au-pl-") ? albumId.slice("au-pl-".length) : "";
+  const jamendoAlbumId = albumId.startsWith("jm-al-") ? albumId.slice("jm-al-".length) : "";
   const { getAlbumById, getSongsByAlbumId } = useArtistUploads();
   const { play, toggleLikeAlbum, isAlbumLiked } = usePlayer();
   const [remoteAlbum, setRemoteAlbum] = useState<Album | null>(null);
   const [remoteSongs, setRemoteSongs] = useState<Song[] | null>(null);
 
   useEffect(() => {
-    if (!audiusPlaylistId) return;
-    fetch(`/api/music/playlist/${audiusPlaylistId}`)
+    const url = audiusPlaylistId
+      ? `/api/music/playlist/${audiusPlaylistId}`
+      : jamendoAlbumId
+        ? `/api/music/jamendo/album/${jamendoAlbumId}`
+        : "";
+    if (!url) return;
+    fetch(url)
       .then(async (res) => {
         if (!res.ok) return;
         const data = (await res.json()) as { album?: Album; songs?: Song[] };
@@ -31,11 +37,11 @@ export default function AlbumPage({ params }: { params: Promise<{ id: string }> 
         setRemoteSongs(data.songs ?? []);
       })
       .catch(() => setRemoteSongs([]));
-  }, [audiusPlaylistId]);
+  }, [audiusPlaylistId, jamendoAlbumId]);
 
   const album = remoteAlbum ?? getAlbumById(albumId) ?? getStaticAlbumById(albumId);
   if (!album) {
-    if (audiusPlaylistId && remoteSongs === null) return <p className="text-white/50">Loading album…</p>;
+    if ((audiusPlaylistId || jamendoAlbumId) && remoteSongs === null) return <p className="text-white/50">Loading album…</p>;
     return <p className="text-white/50">Album not found.</p>;
   }
 
@@ -66,14 +72,11 @@ export default function AlbumPage({ params }: { params: Promise<{ id: string }> 
               size="lg"
               onClick={() => albumSongs[0] && play(albumSongs[0], albumSongs)}
             />
-            <Button variant="ghost" size="icon" onClick={() => toggleLikeAlbum(album.id)}>
+            <Button variant="ghost" size="icon" onClick={() => toggleLikeAlbum(album)}>
               <Heart
                 size={20}
                 className={isAlbumLiked(album.id) ? "fill-violet-500 text-violet-500" : ""}
               />
-            </Button>
-            <Button variant="ghost" size="icon">
-              <Share2 size={20} />
             </Button>
           </div>
         </div>

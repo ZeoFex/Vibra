@@ -31,7 +31,7 @@ export function ArtistShell({ children }: { children: React.ReactNode }) {
   const { artist, logout } = useArtistAuth();
   const [mobileOpen, setMobileOpen] = useState(false);
 
-  const NavContent = () => (
+  const renderNav = () => (
     <>
       <Link href="/artist/dashboard" className="mb-8 flex items-center gap-3 px-2" onClick={() => setMobileOpen(false)}>
         <VibraLogo size={48} />
@@ -92,13 +92,13 @@ export function ArtistShell({ children }: { children: React.ReactNode }) {
             <button onClick={() => setMobileOpen(false)} className="absolute right-4 top-4 text-white/60" aria-label="Close menu">
               <X size={20} />
             </button>
-            <NavContent />
+            {renderNav()}
           </aside>
         </div>
       )}
 
       <aside className="hidden w-64 shrink-0 flex-col border-r border-white/10 bg-black/40 p-4 backdrop-blur-xl lg:flex">
-        <NavContent />
+        {renderNav()}
       </aside>
 
       <div className="flex min-w-0 flex-1 flex-col">
