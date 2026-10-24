@@ -9,33 +9,33 @@ import { useChat } from "@/lib/contexts/chat-context";
 import { useSocial } from "@/lib/contexts/social-context";
 import { useAuth } from "@/lib/contexts/app-context";
 import { MessageList, ChatInput } from "@/components/chat/chat-ui";
-import { socialProfiles } from "@/lib/mock-data/social";
 
 export default function PrivateChatPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const router = useRouter();
   const { user } = useAuth();
-  const { isFriend, friends } = useSocial();
+  const { isFriend, friends, ready } = useSocial();
   const { getPrivateMessages, sendPrivateMessage, markConversationRead } = useChat();
 
-  const friend = friends.find((f) => f.id === id) ?? socialProfiles.find((p) => p.id === id);
+  const friend = friends.find((f) => f.id === id);
   const messages = getPrivateMessages(id);
   const currentUserId = user?.id ?? "user-1";
 
   useEffect(() => {
+    if (!ready) return;
     if (!isFriend(id)) {
       router.replace("/social/messages");
       return;
     }
     markConversationRead(id);
-  }, [id, isFriend, markConversationRead, router]);
+  }, [id, isFriend, markConversationRead, ready, router]);
 
   const sortedMessages = useMemo(
     () => [...messages].sort((a, b) => a.createdAt.localeCompare(b.createdAt)),
     [messages]
   );
 
-  if (!friend || !isFriend(id)) {
+  if (!ready || !friend || !isFriend(id)) {
     return (
       <div className="flex items-center justify-center py-20">
         <div className="h-6 w-6 animate-spin rounded-full border-2 border-violet-500 border-t-transparent" />

@@ -10,11 +10,24 @@ import {
   useRef,
   type ReactNode,
 } from "react";
-import type { Song, DownloadedTrack } from "@/types";
+import type { Album, Artist, Song, DownloadedTrack } from "@/types";
 import type { User } from "@/types";
 import { resolveAudioUrl } from "@/lib/audio/resolve-audio-url";
 
 type RepeatMode = "off" | "all" | "one";
+
+function pickNextIndex(index: number, length: number, shuffle: boolean, repeat: RepeatMode) {
+  if (length <= 0) return -1;
+  if (shuffle && length > 1) {
+    let next = index;
+    while (next === index) next = Math.floor(Math.random() * length);
+    return next;
+  }
+  const next = index + 1;
+  if (next < length) return next;
+  if (repeat === "all") return 0;
+  return -1;
+}
 
 interface PlayerState {
   currentSong: Song | null;
@@ -28,6 +41,11 @@ interface PlayerState {
   likedSongs: Set<string>;
   likedAlbums: Set<string>;
   likedArtists: Set<string>;
+  savedSongs: Song[];
+  savedAlbums: Album[];
+  savedArtists: Artist[];
+  recentSongs: Song[];
+  savedDownloads: Song[];
   downloads: Map<string, DownloadedTrack>;
 }
 
@@ -41,9 +59,9 @@ interface PlayerContextValue extends PlayerState {
   toggleRepeat: () => void;
   setVolume: (volume: number) => void;
   seek: (progress: number) => void;
-  toggleLikeSong: (songId: string) => void;
-  toggleLikeAlbum: (albumId: string) => void;
-  toggleLikeArtist: (artistId: string) => void;
+  toggleLikeSong: (song: Song) => void;
+  toggleLikeAlbum: (album: Album) => void;
+  toggleLikeArtist: (artist: Artist) => void;
   isSongLiked: (songId: string) => boolean;
   isAlbumLiked: (albumId: string) => boolean;
   isArtistLiked: (artistId: string) => boolean;
@@ -70,23 +88,83 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     repeat: "off",
     volume: 80,
     progress: 0,
-    likedSongs: new Set(["song-1", "song-3", "song-5"]),
-    likedAlbums: new Set(["album-1", "album-3"]),
-    likedArtists: new Set(["artist-1", "artist-3"]),
-    downloads: new Map([
-      ["song-1", { songId: "song-1", downloadedAt: "2026-06-01T10:00:00Z", sizeMb: 8.4 }],
-      ["song-5", { songId: "song-5", downloadedAt: "2026-06-02T14:30:00Z", sizeMb: 6.2 }],
-      ["song-3", { songId: "song-3", downloadedAt: "2026-06-04T09:00:00Z", sizeMb: 9.1 }],
-    ]),
+    likedSongs: new Set(),
+    likedAlbums: new Set(),
+    likedArtists: new Set(),
+    savedSongs: [],
+    savedAlbums: [],
+    savedArtists: [],
+    recentSongs: [],
+    savedDownloads: [],
+    downloads: new Map(),
   });
+
+  const libraryReady = useRef(false);
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem("vibra-library");
+      if (raw) {
+        const data = JSON.parse(raw) as {
+          songs?: Song[];
+          albums?: Album[];
+          artists?: Artist[];
+          recent?: Song[];
+          downloads?: { song: Song; downloadedAt: string; sizeMb: number }[];
+        };
+        const songs = data.songs ?? [];
+        const albums = data.albums ?? [];
+        const artists = data.artists ?? [];
+        const storedDownloads = data.downloads ?? [];
+        const downloads = new Map(
+          storedDownloads.map((item) => [item.song.id, { songId: item.song.id, downloadedAt: item.downloadedAt, sizeMb: item.sizeMb }])
+        );
+        setState((prev) => ({
+          ...prev,
+          savedSongs: songs,
+          savedAlbums: albums,
+          savedArtists: artists,
+          recentSongs: data.recent ?? [],
+          savedDownloads: storedDownloads.map((item) => item.song),
+          downloads,
+          likedSongs: new Set(songs.map((song) => song.id)),
+          likedAlbums: new Set(albums.map((album) => album.id)),
+          likedArtists: new Set(artists.map((artist) => artist.id)),
+        }));
+      }
+    } catch {
+      /* keep the empty library */
+    }
+    libraryReady.current = true;
+  }, []);
+
+  useEffect(() => {
+    if (!libraryReady.current) return;
+    localStorage.setItem(
+      "vibra-library",
+      JSON.stringify({
+        songs: state.savedSongs,
+        albums: state.savedAlbums,
+        artists: state.savedArtists,
+        recent: state.recentSongs,
+        downloads: state.savedDownloads
+          .map((song) => {
+            const meta = state.downloads.get(song.id);
+            return meta ? { song, downloadedAt: meta.downloadedAt, sizeMb: meta.sizeMb } : null;
+          })
+          .filter((item) => item !== null),
+      })
+    );
+  }, [state.savedSongs, state.savedAlbums, state.savedArtists, state.recentSongs, state.savedDownloads, state.downloads]);
 
   useEffect(() => {
     if (!audioRef.current) {
       audioRef.current = new Audio();
       audioRef.current.preload = "auto";
+      audioRef.current.loop = false;
+      audioRef.current.preservesPitch = true;
     }
     const audio = audioRef.current;
-
     const onTimeUpdate = () => {
       setState((prev) => {
         if (!prev.currentSong || loadedSongIdRef.current !== prev.currentSong.id) return prev;
@@ -109,10 +187,12 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
         }
 
         const idx = prev.queue.findIndex((s) => s.id === prev.currentSong!.id);
-        let nextIdx = idx + 1;
-        if (nextIdx >= prev.queue.length) {
-          if (prev.repeat === "all") nextIdx = 0;
-          else return { ...prev, isPlaying: false, progress: 0 };
+        const nextIdx = pickNextIndex(idx, prev.queue.length, prev.shuffle, prev.repeat);
+        if (nextIdx < 0) return { ...prev, isPlaying: false, progress: 0 };
+        const upcoming = prev.queue[nextIdx];
+        if (upcoming.id === prev.currentSong.id) {
+          audio.currentTime = 0;
+          void audio.play().catch(() => {});
         }
 
         return {
@@ -193,6 +273,10 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   }, [state.currentSong?.id]);
 
   useEffect(() => {
+    if (audioRef.current) audioRef.current.loop = state.repeat === "one";
+  }, [state.repeat]);
+
+  useEffect(() => {
     const audio = audioRef.current;
     if (!audio || !state.currentSong || loadedSongIdRef.current !== state.currentSong.id) return;
 
@@ -204,10 +288,11 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     setState((prev) => ({
       ...prev,
       currentSong: song,
-      queue: queue ?? prev.queue.length ? prev.queue : [song],
+      queue: queue ?? (prev.queue.length ? prev.queue : [song]),
       isPlayerBarVisible: true,
       isPlaying: true,
       progress: 0,
+      recentSongs: [song, ...prev.recentSongs.filter((item) => item.id !== song.id)].slice(0, 30),
     }));
   }, []);
 
@@ -239,12 +324,20 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     setState((prev) => {
       if (!prev.queue.length || !prev.currentSong) return prev;
       const idx = prev.queue.findIndex((s) => s.id === prev.currentSong!.id);
-      let nextIdx = idx + 1;
-      if (nextIdx >= prev.queue.length) {
-        if (prev.repeat === "all") nextIdx = 0;
-        else return { ...prev, isPlaying: false };
+      const nextIdx = pickNextIndex(idx, prev.queue.length, prev.shuffle, prev.repeat);
+      if (nextIdx < 0) return { ...prev, isPlaying: false };
+      const currentSong = prev.queue[nextIdx];
+      if (currentSong.id === prev.currentSong.id && audioRef.current) {
+        audioRef.current.currentTime = 0;
+        void audioRef.current.play().catch(() => {});
       }
-      return { ...prev, currentSong: prev.queue[nextIdx], progress: 0, isPlaying: true };
+      return {
+        ...prev,
+        currentSong,
+        progress: 0,
+        isPlaying: true,
+        recentSongs: [currentSong, ...prev.recentSongs.filter((item) => item.id !== currentSong.id)].slice(0, 30),
+      };
     });
   }, []);
 
@@ -257,7 +350,14 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       }
       const idx = prev.queue.findIndex((s) => s.id === prev.currentSong!.id);
       const prevIdx = idx <= 0 ? prev.queue.length - 1 : idx - 1;
-      return { ...prev, currentSong: prev.queue[prevIdx], progress: 0, isPlaying: true };
+      const currentSong = prev.queue[prevIdx];
+      return {
+        ...prev,
+        currentSong,
+        progress: 0,
+        isPlaying: true,
+        recentSongs: [currentSong, ...prev.recentSongs.filter((item) => item.id !== currentSong.id)].slice(0, 30),
+      };
     });
   }, []);
 
@@ -279,36 +379,48 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
 
   const seek = useCallback((progress: number) => {
     const audio = audioRef.current;
-    if (audio && loadedSongIdRef.current) {
-      audio.currentTime = progress;
-    }
-    setState((prev) => ({ ...prev, progress }));
+    if (!audio || !loadedSongIdRef.current) return;
+    const wasPlaying = !audio.paused;
+    const max = Number.isFinite(audio.duration) && audio.duration > 0 ? audio.duration : progress;
+    const target = Math.min(Math.max(progress, 0), Math.max(max - 0.25, 0));
+    audio.currentTime = target;
+    if (wasPlaying) void audio.play().catch(() => {});
+    setState((prev) => ({ ...prev, progress: Math.floor(audio.currentTime || target), isPlaying: wasPlaying }));
   }, []);
 
-  const toggleLikeSong = useCallback((songId: string) => {
+  const toggleLikeSong = useCallback((song: Song) => {
     setState((prev) => {
       const liked = new Set(prev.likedSongs);
-      if (liked.has(songId)) liked.delete(songId);
-      else liked.add(songId);
-      return { ...prev, likedSongs: liked };
+      if (liked.has(song.id)) {
+        liked.delete(song.id);
+        return { ...prev, likedSongs: liked, savedSongs: prev.savedSongs.filter((item) => item.id !== song.id) };
+      }
+      liked.add(song.id);
+      return { ...prev, likedSongs: liked, savedSongs: [song, ...prev.savedSongs.filter((item) => item.id !== song.id)] };
     });
   }, []);
 
-  const toggleLikeAlbum = useCallback((albumId: string) => {
+  const toggleLikeAlbum = useCallback((album: Album) => {
     setState((prev) => {
       const liked = new Set(prev.likedAlbums);
-      if (liked.has(albumId)) liked.delete(albumId);
-      else liked.add(albumId);
-      return { ...prev, likedAlbums: liked };
+      if (liked.has(album.id)) {
+        liked.delete(album.id);
+        return { ...prev, likedAlbums: liked, savedAlbums: prev.savedAlbums.filter((item) => item.id !== album.id) };
+      }
+      liked.add(album.id);
+      return { ...prev, likedAlbums: liked, savedAlbums: [album, ...prev.savedAlbums.filter((item) => item.id !== album.id)] };
     });
   }, []);
 
-  const toggleLikeArtist = useCallback((artistId: string) => {
+  const toggleLikeArtist = useCallback((artist: Artist) => {
     setState((prev) => {
       const liked = new Set(prev.likedArtists);
-      if (liked.has(artistId)) liked.delete(artistId);
-      else liked.add(artistId);
-      return { ...prev, likedArtists: liked };
+      if (liked.has(artist.id)) {
+        liked.delete(artist.id);
+        return { ...prev, likedArtists: liked, savedArtists: prev.savedArtists.filter((item) => item.id !== artist.id) };
+      }
+      liked.add(artist.id);
+      return { ...prev, likedArtists: liked, savedArtists: [artist, ...prev.savedArtists.filter((item) => item.id !== artist.id)] };
     });
   }, []);
 
@@ -339,7 +451,11 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
         downloadedAt: new Date().toISOString(),
         sizeMb: Math.round((song.duration / 60) * 2.1 * 10) / 10,
       });
-      return { ...prev, downloads };
+      return {
+        ...prev,
+        downloads,
+        savedDownloads: [song, ...prev.savedDownloads.filter((item) => item.id !== song.id)],
+      };
     });
   }, []);
 
@@ -347,7 +463,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     setState((prev) => {
       const downloads = new Map(prev.downloads);
       downloads.delete(songId);
-      return { ...prev, downloads };
+      return { ...prev, downloads, savedDownloads: prev.savedDownloads.filter((song) => song.id !== songId) };
     });
   }, []);
 

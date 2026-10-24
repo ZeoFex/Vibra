@@ -15,7 +15,6 @@ import {
   GenreCard,
   HorizontalScroll,
 } from "@/components/music/music-cards";
-import { Pagination, usePage } from "@/components/ui/pagination";
 
 function SearchPage() {
   const searchParams = useSearchParams();
@@ -80,9 +79,6 @@ function SearchPage() {
         ),
       };
 
-  const artistPages = usePage(results?.artists ?? artists, 12, query || "browse-artists");
-  const songPages = usePage(results?.songs ?? [], 8, query);
-
   return (
     <div className="space-y-8">
       <div className="relative">
@@ -109,14 +105,13 @@ function SearchPage() {
           <section>
             <SectionHeader title="Popular Artists" />
             <div className="grid grid-cols-2 gap-6 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
-              {artistPages.slice.map((artist, i) => (
+              {artists.map((artist, i) => (
                 <div key={artist.id}>
-                  <p className="mb-2 text-center text-xs font-bold text-white/40">#{artistPages.start + i + 1}</p>
+                  <p className="mb-2 text-center text-xs font-bold text-white/40">#{i + 1}</p>
                   <ArtistCard artist={artist} />
                 </div>
               ))}
             </div>
-            <Pagination page={artistPages.page} pageCount={artistPages.pageCount} onPage={artistPages.setPage} />
           </section>
 
           <section>
@@ -134,11 +129,10 @@ function SearchPage() {
             <section>
               <SectionHeader title="Artists" />
               <div className="grid grid-cols-2 gap-6 sm:grid-cols-3 md:grid-cols-4">
-                {artistPages.slice.map((artist) => (
+                {results.artists.map((artist) => (
                   <ArtistCard key={artist.id} artist={artist} />
                 ))}
               </div>
-              <Pagination page={artistPages.page} pageCount={artistPages.pageCount} onPage={artistPages.setPage} />
             </section>
           )}
           {results.albums.length > 0 && (
@@ -156,16 +150,16 @@ function SearchPage() {
             <section>
               <SectionHeader title="Songs" />
               <div className="space-y-1">
-                {songPages.slice.map((song, i) => (
+                {results.songs.map((song, i) => (
                   <SongCard
                     key={song.id}
                     song={song}
-                    index={songPages.start + i + 1}
+                    index={i + 1}
+                    showShare
                     onPlay={() => play(song, results.songs)}
                   />
                 ))}
               </div>
-              <Pagination page={songPages.page} pageCount={songPages.pageCount} onPage={songPages.setPage} />
             </section>
           )}
           {!searching && results.songs.length === 0 && results.artists.length === 0 && results.albums.length === 0 && (

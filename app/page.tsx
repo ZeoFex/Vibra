@@ -2,7 +2,6 @@ import Link from "next/link";
 import Image from "next/image";
 import {
   Play,
-  Sparkles,
   Crown,
   Music,
   Headphones,
@@ -11,10 +10,11 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { VibraLogo } from "@/components/brand/vibra-logo";
+import { VoiceRecorder } from "@/components/voice/voice-recorder";
 
 const features = [
   {
-    icon: Sparkles,
+    icon: null,
     title: "Vibra AI",
     description: "Smart recommendations that learn your taste and mood.",
   },
@@ -45,7 +45,14 @@ export default function LandingPage() {
     <div className="min-h-screen bg-black text-white">
       {/* Nav */}
       <nav className="fixed top-0 z-50 flex w-full items-center justify-between gap-2 border-b border-white/5 bg-black/60 px-4 py-3 backdrop-blur-xl sm:px-6 sm:py-4">
-        <VibraLogo size={44} />
+        <Image
+          src="/vibra-logo-clear.png"
+          alt="Vibra"
+          width={220}
+          height={72}
+          priority
+          className="h-12 w-auto sm:h-14 md:h-16"
+        />
         <div className="flex shrink-0 items-center gap-2 sm:gap-3">
           <Link href="/login">
             <Button variant="ghost" size="sm" className="px-3 sm:px-4">Log in</Button>
@@ -60,25 +67,32 @@ export default function LandingPage() {
       </nav>
 
       {/* Hero */}
-      <section className="relative flex min-h-screen items-center justify-center overflow-hidden pt-20">
+      <section className="relative flex min-h-[100dvh] items-start justify-center overflow-hidden pt-24">
         <div className="absolute inset-0 gradient-bg" />
         <div className="absolute left-1/2 top-1/3 h-[500px] w-[500px] -translate-x-1/2 rounded-full bg-violet-600/20 blur-[120px] animate-pulse-glow" />
         <div className="absolute right-1/4 top-1/4 h-[300px] w-[300px] rounded-full bg-fuchsia-600/15 blur-[100px] animate-pulse-glow" />
 
-        <div className="relative z-10 mx-auto max-w-5xl px-6 text-center">
+        <div className="relative z-10 mx-auto max-w-5xl px-6 pt-4 text-center md:pt-8">
+          <div className="mb-4 flex items-center justify-center gap-4 sm:gap-8">
+            <Image
+              src="/vibra-logo-clear.png"
+              alt="Vibra"
+              width={560}
+              height={200}
+              priority
+              className="h-auto w-40 sm:w-56 md:w-72 lg:w-96"
+            />
+            <VoiceRecorder />
+          </div>
           <p className="mb-4 text-sm font-medium uppercase tracking-widest text-violet-400">
             Feel Every Beat
           </p>
-          <h1 className="mb-6 text-4xl font-bold leading-tight sm:text-5xl md:text-7xl">
+          <h1 className="mb-4 text-4xl font-bold leading-tight sm:text-5xl md:text-6xl">
             Music that moves
             <br />
             <span className="gradient-text">with you</span>
           </h1>
-          <p className="mx-auto mb-10 max-w-2xl text-lg text-white/60">
-            Vibra combines the best of streaming with AI-powered recommendations
-            to deliver the perfect soundtrack for every moment.
-          </p>
-          <div className="flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
+          <div className="mt-6 flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
             <Link href="/signup">
               <Button variant="premium" size="lg" className="gap-2">
                 <Play size={18} fill="currentColor" />
@@ -116,7 +130,11 @@ export default function LandingPage() {
             {features.map(({ icon: Icon, title, description }) => (
               <div key={title} className="glass rounded-2xl p-6 transition-transform hover:-translate-y-1">
                 <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-violet-600/20">
-                  <Icon size={24} className="text-violet-400" />
+                  {title === "Vibra AI" || !Icon ? (
+                    <VibraLogo size={28} className="h-7 w-7 rounded-lg" />
+                  ) : (
+                    <Icon size={24} className="text-violet-400" />
+                  )}
                 </div>
                 <h3 className="mb-2 text-lg font-semibold">{title}</h3>
                 <p className="text-sm text-white/50">{description}</p>
@@ -141,7 +159,7 @@ export default function LandingPage() {
             <div className="space-y-3">
               {["Generate a workout playlist", "Create a chill evening mix", "Songs similar to this track"].map((prompt) => (
                 <div key={prompt} className="flex items-center gap-3 rounded-xl border border-white/10 bg-white/5 px-4 py-3">
-                  <Sparkles size={16} className="shrink-0 text-violet-400" />
+                  <VibraLogo size={18} className="h-[18px] w-[18px] shrink-0 rounded-md" />
                   <span className="text-sm text-white/70">&ldquo;{prompt}&rdquo;</span>
                   <ChevronRight size={16} className="ml-auto text-white/30" />
                 </div>
@@ -151,7 +169,7 @@ export default function LandingPage() {
           <div className="relative h-80 w-full max-w-md overflow-hidden rounded-3xl glass lg:h-96">
             <div className="absolute inset-0 bg-gradient-to-br from-violet-600/30 to-fuchsia-600/20" />
             <div className="relative flex h-full flex-col items-center justify-center p-8 text-center">
-              <Sparkles size={48} className="mb-4 text-violet-400" />
+              <VibraLogo size={56} className="mb-4 h-14 w-14 rounded-2xl" />
               <p className="text-lg font-medium">AI-Powered Discovery</p>
               <p className="mt-2 text-sm text-white/50">Personalized for your unique taste</p>
             </div>

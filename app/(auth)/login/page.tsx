@@ -8,11 +8,13 @@ import { Input } from "@/components/ui/input";
 import { PasswordField } from "@/components/auth/password-field";
 import { useAuth } from "@/lib/contexts/app-context";
 import { getSafeRedirect } from "@/lib/auth-redirect";
-import { VibraLogo } from "@/components/brand/vibra-logo";
 import { AuthSplit } from "@/components/auth/auth-split";
 
 const fieldClass =
-  "h-12 rounded-md border-transparent bg-white/10 text-base shadow-none focus-visible:border-white focus-visible:ring-1 focus-visible:ring-white";
+  "h-12 rounded-xl border-violet-400/15 bg-[#0c0714]/70 text-base shadow-none backdrop-blur-none focus-visible:border-violet-400/40 focus-visible:ring-violet-500/40";
+
+const cardClass =
+  "w-full max-w-[440px] rounded-3xl border border-violet-400/15 bg-[#241433]/45 p-6 shadow-2xl shadow-black/40 backdrop-blur-md sm:p-8";
 
 function LoginForm() {
   const [email, setEmail] = useState("");
@@ -41,13 +43,12 @@ function LoginForm() {
   };
 
   return (
-    <div className="w-full max-w-[420px]">
-      <Link href="/" className="mb-8 inline-flex lg:hidden">
-        <VibraLogo size={72} className="rounded-2xl" />
-      </Link>
-      <h1 className="mb-8 text-3xl font-bold tracking-tight sm:text-4xl">Log in to Vibra</h1>
+    <div className={cardClass}>
+      <p className="mb-2 text-xs font-semibold uppercase tracking-[0.18em] text-violet-300">Vibra</p>
+      <h1 className="mb-1 text-3xl font-bold tracking-tight">Log in</h1>
+      <p className="mb-6 text-sm text-violet-100/70">Pick up where you left off.</p>
 
-      <form onSubmit={handleSubmit} className="space-y-5">
+      <form onSubmit={handleSubmit} className="space-y-4">
         {error && (
           <div className="rounded-md bg-red-500/10 px-4 py-3 text-sm text-red-400">{error}</div>
         )}
@@ -71,18 +72,18 @@ function LoginForm() {
           showRequirements={false}
           inputClassName={fieldClass}
         />
-        <Link href="/forgot-password" className="inline-block text-sm font-medium text-white underline underline-offset-2 hover:text-violet-300">
+        <Link href="/forgot-password" className="inline-block text-sm font-medium text-violet-300 hover:text-violet-200">
           Forgot your password?
         </Link>
-        <Button type="submit" className="h-12 w-full rounded-full text-base font-bold shadow-none" disabled={loading}>
+        <Button type="submit" className="h-12 w-full rounded-full text-base font-bold" disabled={loading}>
           {loading ? "Signing in..." : "Log in"}
         </Button>
       </form>
 
-      <p className="mt-8 text-sm text-white/70">
+      <p className="mt-6 text-center text-sm text-white/70">
         Don&apos;t have an account?{" "}
-        <Link href="/signup" className="font-bold text-white underline underline-offset-2 hover:text-violet-300">
-          Sign up for Vibra
+        <Link href="/signup" className="font-semibold text-violet-300 hover:text-violet-200">
+          Create one
         </Link>
       </p>
     </div>

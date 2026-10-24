@@ -1,19 +1,10 @@
 import type { Metadata, Viewport } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { SplashScreen } from "@/components/brand/splash-screen";
 import { AuthProvider, PlayerProvider } from "@/lib/contexts/app-context";
+import { PlaylistProvider } from "@/lib/contexts/playlist-context";
 import { ArtistAuthProvider } from "@/lib/contexts/artist-auth-context";
 import { ArtistUploadProvider } from "@/lib/contexts/artist-upload-context";
 import "./globals.css";
-
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
 
 export const metadata: Metadata = {
   title: "Vibra — Feel Every Beat",
@@ -34,13 +25,16 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased dark`}
+      className="h-full antialiased dark"
     >
       <body className="min-h-full min-h-dvh bg-black text-white">
+        <SplashScreen />
         <AuthProvider>
           <ArtistAuthProvider>
             <ArtistUploadProvider>
-              <PlayerProvider>{children}</PlayerProvider>
+              <PlayerProvider>
+                <PlaylistProvider>{children}</PlaylistProvider>
+              </PlayerProvider>
             </ArtistUploadProvider>
           </ArtistAuthProvider>
         </AuthProvider>

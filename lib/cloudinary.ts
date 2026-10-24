@@ -38,3 +38,69 @@ export async function uploadAvatarImage(
 
   return result.secure_url;
 }
+
+export async function uploadCatalogImage(buffer: Buffer): Promise<string> {
+  ensureConfigured();
+  const result = await new Promise<{ secure_url: string }>((resolve, reject) => {
+    const stream = cloudinary.uploader.upload_stream(
+      {
+        folder: "vibra/covers",
+        resource_type: "image",
+        transformation: [{ width: 800, height: 800, crop: "fill", gravity: "auto" }],
+      },
+      (error, uploadResult) => {
+        if (error || !uploadResult?.secure_url) {
+          reject(error ?? new Error("Cover upload failed"));
+          return;
+        }
+        resolve(uploadResult as { secure_url: string });
+      }
+    );
+    stream.end(buffer);
+  });
+  return result.secure_url;
+}
+
+export async function uploadVoiceAudio(buffer: Buffer): Promise<string> {
+  ensureConfigured();
+  const result = await new Promise<{ secure_url: string }>((resolve, reject) => {
+    const stream = cloudinary.uploader.upload_stream(
+      {
+        folder: "vibra/voice",
+        resource_type: "video",
+      },
+      (error, uploadResult) => {
+        if (error || !uploadResult?.secure_url) {
+          reject(error ?? new Error("Voice upload failed"));
+          return;
+        }
+        resolve(uploadResult as { secure_url: string });
+      }
+    );
+    stream.end(buffer);
+  });
+  return result.secure_url;
+}
+
+export async function uploadCatalogAudio(buffer: Buffer, filename: string): Promise<string> {
+  ensureConfigured();
+  const result = await new Promise<{ secure_url: string }>((resolve, reject) => {
+    const stream = cloudinary.uploader.upload_stream(
+      {
+        folder: "vibra/tracks",
+        resource_type: "video",
+        use_filename: true,
+        filename_override: filename.replace(/\.[^.]+$/, ""),
+      },
+      (error, uploadResult) => {
+        if (error || !uploadResult?.secure_url) {
+          reject(error ?? new Error("Audio upload failed"));
+          return;
+        }
+        resolve(uploadResult as { secure_url: string });
+      }
+    );
+    stream.end(buffer);
+  });
+  return result.secure_url;
+}

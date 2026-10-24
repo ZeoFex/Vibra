@@ -3,12 +3,19 @@
 import { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Mic2, Lock } from "lucide-react";
+import { Lock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { PasswordField } from "@/components/auth/password-field";
+import { AuthSplit } from "@/components/auth/auth-split";
 import { useArtistAuth } from "@/lib/contexts/artist-auth-context";
 import { getSafeRedirect } from "@/lib/auth-redirect";
+
+const fieldClass =
+  "h-12 rounded-xl border-violet-400/15 bg-[#0c0714]/70 text-base shadow-none backdrop-blur-none focus-visible:border-violet-400/40 focus-visible:ring-violet-500/40";
+
+const cardClass =
+  "w-full max-w-[440px] rounded-3xl border border-violet-400/15 bg-[#241433]/45 p-6 shadow-2xl shadow-black/40 backdrop-blur-md sm:p-8";
 
 function ArtistLoginForm() {
   const [email, setEmail] = useState("");
@@ -59,16 +66,12 @@ function ArtistLoginForm() {
   };
 
   return (
-    <div className="relative w-full max-w-md">
-      <div className="mb-8 text-center">
-        <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-violet-600 to-fuchsia-600">
-          <Mic2 size={28} />
-        </div>
-        <h1 className="text-2xl font-bold">Artist Login</h1>
-        <p className="mt-2 text-sm text-white/50">Access your dashboard, uploads, and analytics</p>
-      </div>
+    <div className={cardClass}>
+      <p className="mb-2 text-xs font-semibold uppercase tracking-[0.18em] text-violet-300">Vibra Artists</p>
+      <h1 className="mb-1 text-3xl font-bold tracking-tight">Artist log in</h1>
+      <p className="mb-6 text-sm text-violet-100/70">Open your dashboard, uploads, and analytics.</p>
 
-      <form onSubmit={handleSubmit} className="glass space-y-4 rounded-2xl p-8">
+      <form onSubmit={handleSubmit} className="space-y-4">
         {error && (
           <div className="rounded-lg bg-red-500/10 px-4 py-2 text-sm text-red-400">{error}</div>
         )}
@@ -76,16 +79,18 @@ function ArtistLoginForm() {
           <div className="rounded-lg bg-green-500/10 px-4 py-2 text-sm text-green-300">{notice}</div>
         )}
         <div>
-          <label className="mb-1.5 block text-sm text-white/70">Email</label>
-          <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@example.com" required />
+          <label className="mb-2 block text-sm font-semibold text-white">Email</label>
+          <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@example.com" required className={fieldClass} />
         </div>
         <PasswordField
           value={password}
           onChange={setPassword}
           id="artist-login-password"
           autoComplete="current-password"
+          showRequirements={false}
+          inputClassName={fieldClass}
         />
-        <Button type="submit" className="w-full gap-2" disabled={loading}>
+        <Button type="submit" className="h-12 w-full gap-2 text-base font-bold" disabled={loading}>
           <Lock size={16} />
           {loading ? "Signing in..." : "Sign in to Artist Portal"}
         </Button>
@@ -101,12 +106,12 @@ function ArtistLoginForm() {
         </p>
       </form>
 
-      <p className="mt-6 text-center text-sm text-white/50">
+      <p className="mt-6 text-center text-sm text-white/70">
         New artist?{" "}
-        <Link href="/artist/register" className="text-violet-400 hover:underline">Register here</Link>
+        <Link href="/artist/register" className="font-semibold text-violet-300 hover:text-violet-200">Create an account</Link>
       </p>
-      <p className="mt-2 text-center text-sm text-white/40">
-        <Link href="/home" className="hover:text-white/60">← Back to listener app</Link>
+      <p className="mt-2 text-center text-sm text-white/50">
+        <Link href="/home" className="text-violet-300 hover:text-violet-200">Back to Vibra</Link>
       </p>
     </div>
   );
@@ -114,13 +119,10 @@ function ArtistLoginForm() {
 
 export default function ArtistLoginPage() {
   return (
-    <div className="flex min-h-screen items-center justify-center gradient-bg px-4">
-      <div className="absolute inset-0 overflow-hidden">
-        <div className="absolute left-1/2 top-1/3 h-[400px] w-[400px] -translate-x-1/2 rounded-full bg-fuchsia-600/15 blur-[100px]" />
-      </div>
+    <AuthSplit sideSrc="/vibra-artist-hero.jpg" sideAlt="Artist performing on stage">
       <Suspense fallback={<div className="h-8 w-8 animate-spin rounded-full border-2 border-violet-500 border-t-transparent" />}>
         <ArtistLoginForm />
       </Suspense>
-    </div>
+    </AuthSplit>
   );
 }

@@ -27,7 +27,7 @@ export function createAudioStreamResponse(
     return new Response(null, { status: 416, headers: { "Content-Range": `bytes */${size}` } });
   }
 
-  let start = match[1] ? Number.parseInt(match[1], 10) : 0;
+  const start = match[1] ? Number.parseInt(match[1], 10) : 0;
   let end = match[2] ? Number.parseInt(match[2], 10) : size - 1;
 
   if (Number.isNaN(start) || Number.isNaN(end) || start > end || start >= size) {

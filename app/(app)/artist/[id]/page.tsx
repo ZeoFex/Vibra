@@ -2,7 +2,7 @@
 
 import { use, useEffect, useState } from "react";
 import Image from "next/image";
-import { BadgeCheck, Heart, Share2, UserPlus } from "lucide-react";
+import { BadgeCheck, Heart, UserPlus } from "lucide-react";
 import { getArtistById } from "@/lib/mock-data/artists";
 import { getSongsByArtist } from "@/lib/mock-data/songs";
 import { getAlbumsByArtist } from "@/lib/mock-data/albums";
@@ -15,14 +15,20 @@ import type { Artist, Song } from "@/types";
 export default function ArtistPage({ params }: { params: Promise<{ id: string }> }) {
   const artistId = use(params).id;
   const audiusUserId = artistId.startsWith("au-") && !artistId.startsWith("au-pl-") ? artistId.slice(3) : "";
+  const jamendoArtistId = artistId.startsWith("jm-") && !artistId.startsWith("jm-al-") ? artistId.slice(3) : "";
   const localArtist = getArtistById(artistId);
   const { play, toggleLikeArtist, isArtistLiked } = usePlayer();
   const [remoteArtist, setRemoteArtist] = useState<Artist | null>(null);
   const [remoteSongs, setRemoteSongs] = useState<Song[] | null>(null);
 
   useEffect(() => {
-    if (!audiusUserId) return;
-    fetch(`/api/music/artist/${audiusUserId}`)
+    const url = audiusUserId
+      ? `/api/music/artist/${audiusUserId}`
+      : jamendoArtistId
+        ? `/api/music/jamendo/artist/${jamendoArtistId}`
+        : "";
+    if (!url) return;
+    fetch(url)
       .then(async (res) => {
         if (!res.ok) {
           setRemoteSongs([]);
@@ -33,11 +39,11 @@ export default function ArtistPage({ params }: { params: Promise<{ id: string }>
         setRemoteSongs(data.songs ?? []);
       })
       .catch(() => setRemoteSongs([]));
-  }, [audiusUserId]);
+  }, [audiusUserId, jamendoArtistId]);
 
   const artist = remoteArtist ?? localArtist;
   if (!artist) {
-    if (audiusUserId && remoteSongs === null) return <p className="text-white/50">Loading artist…</p>;
+    if ((audiusUserId || jamendoArtistId) && remoteSongs === null) return <p className="text-white/50">Loading artist…</p>;
     return <p className="text-white/50">Artist not found.</p>;
   }
 
@@ -74,7 +80,7 @@ export default function ArtistPage({ params }: { params: Promise<{ id: string }>
         <Button
           variant="ghost"
           size="icon"
-          onClick={() => toggleLikeArtist(artist.id)}
+          onClick={() => toggleLikeArtist(artist)}
         >
           <Heart
             size={22}
@@ -83,9 +89,6 @@ export default function ArtistPage({ params }: { params: Promise<{ id: string }>
         </Button>
         <Button variant="ghost" size="icon">
           <UserPlus size={22} />
-        </Button>
-        <Button variant="ghost" size="icon">
-          <Share2 size={22} />
         </Button>
       </div>
 

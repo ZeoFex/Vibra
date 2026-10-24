@@ -8,6 +8,7 @@ interface SelectFieldProps {
   required?: boolean;
   placeholder?: string;
   className?: string;
+  selectClassName?: string;
 }
 
 export function SelectField({
@@ -18,6 +19,7 @@ export function SelectField({
   required,
   placeholder = "Select...",
   className,
+  selectClassName,
 }: SelectFieldProps) {
   return (
     <div className={className}>
@@ -28,7 +30,10 @@ export function SelectField({
         value={value}
         onChange={(e) => onChange(e.target.value)}
         required={required}
-        className="flex h-11 w-full rounded-xl border border-white/10 bg-white/5 px-4 text-sm text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500"
+        className={cn(
+          "flex h-11 w-full rounded-xl border border-white/10 bg-white/5 px-4 text-sm text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500",
+          selectClassName
+        )}
       >
         {!value && (
           <option value="" disabled className="bg-zinc-900">

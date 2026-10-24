@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { Sparkles, Send, Music, Loader2 } from "lucide-react";
+import { Send, Music, Loader2 } from "lucide-react";
+import { VibraLogo } from "@/components/brand/vibra-logo";
 import { aiSuggestions, songs, moods } from "@/lib/mock-data";
 import { usePlayer } from "@/lib/contexts/app-context";
 import { SongCard } from "@/components/music/music-cards";
@@ -72,9 +73,7 @@ export default function AIPage() {
   return (
     <div className="mx-auto flex max-w-3xl flex-col gap-6">
       <div className="flex items-center gap-3">
-        <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-violet-600 to-fuchsia-600">
-          <Sparkles size={24} />
-        </div>
+        <VibraLogo size={48} className="h-12 w-12 rounded-2xl" />
         <div>
           <h1 className="text-2xl font-bold">Vibra AI</h1>
           <p className="text-sm text-white/50">Your intelligent music curator</p>
