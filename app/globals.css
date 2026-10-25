@@ -5,8 +5,9 @@
   --foreground: #ffffff;
   --violet-accent: #7c3aed;
   --deep-blue: #1e1b4b;
-  --player-bar-height: 4.5rem;
-  --app-chrome-bottom: calc(var(--player-bar-height) + env(safe-area-inset-bottom, 0px));
+  --player-bar-height: 3.5rem;
+  --tab-bar-height: 4.25rem;
+  --app-chrome-bottom: calc(var(--player-bar-height) + var(--tab-bar-height) + env(safe-area-inset-bottom, 0px));
 }
 
 @theme inline {
@@ -16,6 +17,19 @@
   --color-deep-blue: var(--deep-blue);
   --font-sans: ui-sans-serif, system-ui, sans-serif;
   --font-mono: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+@media (min-width: 640px) {
+  :root {
+    --player-bar-height: 4.5rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  :root {
+    --tab-bar-height: 0px;
+    --app-chrome-bottom: calc(var(--player-bar-height) + env(safe-area-inset-bottom, 0px));
+  }
 }
 
 html {

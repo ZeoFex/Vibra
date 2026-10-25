@@ -44,6 +44,7 @@ export async function POST(request: Request) {
     return jsonError("Confirm you have the right to post this music");
   }
 
+  const bulk = formData.get("bulk") === "true";
   const releaseType = String(formData.get("releaseType") ?? "album") as ReleaseType;
   const config = getReleaseTypeConfig(releaseType);
   const albumTitle = String(formData.get("albumTitle") ?? "").trim();
@@ -56,9 +57,11 @@ export async function POST(request: Request) {
   const cover = formData.get("cover");
   const audioFiles = formData.getAll("audio").filter((entry): entry is File => entry instanceof File && entry.size > 0);
 
-  if (!albumTitle || !artistName) return jsonError("Release title and artist name are required");
+  if (!artistName) return jsonError("Artist name is required");
+  if (!bulk && !albumTitle) return jsonError("Release title and artist name are required");
   if (!(cover instanceof File) || cover.size === 0) return jsonError("A cover image is required");
-  if (audioFiles.length < config.minTracks) return jsonError(`Add at least ${config.minTracks} track(s) for a ${config.label}`);
+  if (!bulk && audioFiles.length < config.minTracks) return jsonError(`Add at least ${config.minTracks} track(s) for a ${config.label}`);
+  if (bulk && audioFiles.length === 0) return jsonError("Add at least one MP3");
   if (audioFiles.length > BATCH_LIMIT) return jsonError(`Upload at most ${BATCH_LIMIT} tracks at a time`);
 
   const artistId = await catalogArtistId();
@@ -72,6 +75,11 @@ export async function POST(request: Request) {
     const mimeType = normalizeAudioMimeType(file);
     if (file.size > MAX_AUDIO_BYTES) {
       skipped.push({ title, reason: "File is over 50 MB" });
+      continue;
+    }
+    const isMp3 = mimeType === "audio/mpeg" || /\.mp3$/i.test(file.name);
+    if (bulk && !isMp3) {
+      skipped.push({ title, reason: "Only MP3 files can be bulk uploaded" });
       continue;
     }
     if (!ALLOWED_AUDIO_MIME_TYPES.has(mimeType) && !/\.(mp3|wav|flac|m4a|aac|ogg)$/i.test(file.name)) {
@@ -99,9 +107,9 @@ export async function POST(request: Request) {
         artistId,
         title,
         artistName,
-        albumTitle,
-        releaseType,
-        albumGroupId,
+        albumTitle: bulk ? title : albumTitle,
+        releaseType: bulk ? "single" : releaseType,
+        albumGroupId: bulk ? randomUUID() : albumGroupId,
         trackNumber: index + 1,
         genre,
         about: about || null,

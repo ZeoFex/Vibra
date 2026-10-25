@@ -6,7 +6,7 @@ const globalForPrisma = globalThis as unknown as {
   prismaVersion?: number;
 };
 
-const PRISMA_VERSION = 2;
+const PRISMA_VERSION = 3;
 
 function createPrismaClient() {
   const connectionString = process.env.DATABASE_URL;

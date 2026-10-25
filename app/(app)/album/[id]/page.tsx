@@ -57,7 +57,7 @@ export default function AlbumPage({ params }: { params: Promise<{ id: string }> 
         </div>
         <div className="flex-1 text-center sm:text-left">
           <p className="text-xs font-medium uppercase tracking-wider text-white/50">{album.type}</p>
-          <h1 className="mt-1 text-3xl font-bold md:text-5xl">{album.title}</h1>
+          <h1 className="mt-1 break-words text-2xl font-bold sm:text-3xl md:text-5xl">{album.title}</h1>
           <p className="mt-2 text-sm text-white/60">
             <Link href={`/artist/${album.artistId}`} className="font-medium text-white hover:underline">
               {album.artistName}

@@ -56,7 +56,11 @@ export default function VerificationListPage() {
               <tr key={app.id} className="border-b border-white/5 hover:bg-white/[0.02]">
                 <td className="p-4">
                   <div className="flex items-center gap-3">
-                    <Image src={app.profilePhoto} alt="" width={40} height={40} className="rounded-full" />
+                    {app.profilePhoto ? (
+                      <Image src={app.profilePhoto} alt="" width={40} height={40} className="rounded-full object-cover" />
+                    ) : (
+                      <span className="flex h-10 w-10 items-center justify-center rounded-full bg-violet-700 text-sm font-semibold">{app.stageName.slice(0, 1)}</span>
+                    )}
                     <div>
                       <p className="font-medium">{app.stageName}</p>
                       <p className="text-xs text-white/50">{app.email}</p>

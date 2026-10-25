@@ -26,7 +26,7 @@ import {
   ChevronDown,
   UserPlus,
 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
 import { VibraLogo } from "@/components/brand/vibra-logo";
 import { useAdmin } from "@/lib/contexts/admin-context";
@@ -63,16 +63,12 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
 
-  if (!isAuthReady) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-zinc-950">
-        <div className="h-8 w-8 animate-spin rounded-full border-2 border-violet-500 border-t-transparent" />
-      </div>
-    );
-  }
-
-  if (!isAuthenticated) {
+  useEffect(() => {
+    if (!isAuthReady || isAuthenticated) return;
     router.replace("/admin/login");
+  }, [isAuthenticated, isAuthReady, router]);
+
+  if (!isAuthReady || !isAuthenticated) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-zinc-950">
         <div className="h-8 w-8 animate-spin rounded-full border-2 border-violet-500 border-t-transparent" />
@@ -83,7 +79,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
   const filteredNav = filterNav(admin!.role);
 
   const renderNav = () => (
-    <nav className="flex-1 space-y-0.5 overflow-y-auto">
+    <nav className="min-h-0 flex-1 space-y-0.5 overflow-y-auto">
       {filteredNav.map(({ href, label, icon: Icon }) => {
         const active = href === "/admin" ? pathname === href : pathname.startsWith(href);
         return (
@@ -105,10 +101,10 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
   );
 
   return (
-    <div className="flex min-h-screen bg-zinc-950 text-white">
+    <div className="flex h-dvh overflow-hidden bg-zinc-950 text-white">
       {/* Sidebar desktop */}
-      <aside className="hidden w-64 shrink-0 flex-col border-r border-white/10 bg-black/40 lg:flex">
-        <div className="flex flex-col p-4 h-full">
+      <aside className="hidden h-full w-64 shrink-0 flex-col border-r border-white/10 bg-black/40 lg:flex">
+        <div className="flex h-full min-h-0 flex-col p-4">
           <Link href="/home" className="mb-4 flex items-center gap-2 text-sm text-white/40 hover:text-white">
             <ArrowLeft size={16} />
             Back to Vibra
@@ -149,8 +145,8 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
         </div>
       )}
 
-      <div className="flex min-w-0 flex-1 flex-col">
-        <header className="sticky top-0 z-40 border-b border-white/10 bg-zinc-950/80 backdrop-blur-xl">
+      <div className="flex min-h-0 min-w-0 flex-1 flex-col">
+        <header className="z-40 shrink-0 border-b border-white/10 bg-zinc-950/80 backdrop-blur-xl">
           <div className="flex items-center gap-2 px-3 py-3 sm:gap-4 sm:px-4 md:px-6">
             <button onClick={() => setMobileOpen(true)} className="rounded-lg p-2 hover:bg-white/10 lg:hidden" aria-label="Open menu">
               <Menu size={20} />

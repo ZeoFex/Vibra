@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { Heart, Clock, Disc, Users, ListMusic, Plus, Download, Trash2, HardDrive } from "lucide-react";
 import { usePlayer } from "@/lib/contexts/app-context";
 import { usePlaylists } from "@/lib/contexts/playlist-context";
@@ -22,7 +23,10 @@ const tabs = [
 type TabId = (typeof tabs)[number]["id"];
 
 export default function LibraryPage() {
-  const [activeTab, setActiveTab] = useState<TabId>("playlists");
+  const requested = useSearchParams().get("tab");
+  const [activeTab, setActiveTab] = useState<TabId>(
+    tabs.some((tab) => tab.id === requested) ? (requested as TabId) : "playlists"
+  );
   const [creating, setCreating] = useState(false);
   const [title, setTitle] = useState("");
   const { play, savedSongs, savedAlbums, savedArtists, recentSongs, savedDownloads, downloads, removeDownload, downloadedSongIds } = usePlayer();

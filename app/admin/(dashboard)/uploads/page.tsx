@@ -38,10 +38,11 @@ export default function AdminCatalogUploadPage() {
     setCoverPreview(URL.createObjectURL(file));
   };
 
-  const onAudio = async (list: FileList | null) => {
+  const addAudio = async (list: FileList | null, mp3Only = false) => {
     if (!list) return;
+    const incoming = Array.from(list).filter((file) => !mp3Only || /\.mp3$/i.test(file.name) || file.type === "audio/mpeg");
     const next: TrackFile[] = [];
-    for (const file of Array.from(list).slice(0, 40)) {
+    for (const file of incoming.slice(0, 40)) {
       const duration = await getAudioDurationFromFile(file);
       next.push({
         file,
@@ -50,7 +51,45 @@ export default function AdminCatalogUploadPage() {
         explicit: false,
       });
     }
-    setTracks(next);
+    setTracks((current) => [...current, ...next].slice(0, 40));
+  };
+
+  const publishBulk = async () => {
+    setError("");
+    setMessage("");
+    if (!rights) {
+      setError("Confirm you have the right to post these songs.");
+      return;
+    }
+    if (!artistName.trim() || !cover || tracks.length === 0) {
+      setError("Add the artist name, one cover, and at least one MP3.");
+      return;
+    }
+    setBusy(true);
+    const body = new FormData();
+    body.set("bulk", "true");
+    body.set("artistName", artistName);
+    body.set("genre", genre);
+    body.set("releaseDate", releaseDate);
+    body.set("producers", producers || "Unknown");
+    body.set("copyrightConfirmed", "true");
+    body.set("cover", cover);
+    tracks.forEach((track, index) => {
+      body.append("audio", track.file);
+      body.set(`title-${index}`, track.title);
+      body.set(`duration-${index}`, String(track.duration));
+      body.set(`explicit-${index}`, track.explicit ? "true" : "false");
+    });
+    const response = await fetch("/api/admin/catalog", { method: "POST", body });
+    const data = (await response.json()) as { created?: number; skipped?: { title: string; reason: string }[]; error?: string };
+    setBusy(false);
+    if (!response.ok) {
+      setError(data.error || "Upload failed");
+      return;
+    }
+    const skipped = data.skipped ?? [];
+    setMessage(`Published ${data.created ?? 0} MP3${(data.created ?? 0) === 1 ? "" : "s"}.${skipped.length ? ` Skipped ${skipped.length}: ${skipped.map((item) => `${item.title} (${item.reason})`).join(", ")}` : ""}`);
+    setTracks([]);
   };
 
   const submit = async () => {
@@ -101,9 +140,64 @@ export default function AdminCatalogUploadPage() {
     <div className="mx-auto max-w-3xl space-y-6">
       <PageHeader
         title="Upload catalog"
-        description="Publish a single, EP, album, or other release. Duplicate title and artist pairs are skipped. Up to 40 tracks per batch."
+        description="Publish a batch of MP3s, or a single, EP, or album. Duplicate title and artist pairs are skipped. Up to 40 tracks per batch."
       />
+      <div className="space-y-4 rounded-xl border border-violet-400/30 bg-violet-500/10 p-5">
+        <h2 className="text-lg font-semibold">Bulk MP3 upload</h2>
+        <p className="text-sm text-white/60">Each file is published as its own song under the artist name. Titles start from the file names and you can edit them before publishing.</p>
+        <Input placeholder="Artist name" value={artistName} onChange={(event) => setArtistName(event.target.value)} />
+        <div className="grid gap-3 sm:grid-cols-2">
+          <select className="rounded-lg border border-white/10 bg-black px-3 py-2" value={genre} onChange={(event) => setGenre(event.target.value)}>
+            {genreOptions.map((option) => (
+              <option key={option} value={option}>{option}</option>
+            ))}
+          </select>
+          <Input type="date" value={releaseDate} onChange={(event) => setReleaseDate(event.target.value)} />
+        </div>
+        <div className="flex flex-wrap items-center gap-3">
+          <label className="inline-flex h-10 cursor-pointer items-center rounded-full bg-white/10 px-5 text-sm font-medium text-white hover:bg-white/20">
+            Choose cover
+            <input className="sr-only" type="file" accept="image/*" onChange={(event) => onCover(event.target.files?.[0])} />
+          </label>
+          <span className="text-sm text-white/50">{cover ? cover.name : "No cover selected"}</span>
+        </div>
+        {coverPreview && (
+          <Image src={coverPreview} alt="" width={120} height={120} className="h-28 w-28 rounded-xl object-cover" unoptimized />
+        )}
+        <div className="flex flex-wrap items-center gap-3">
+          <label className="inline-flex h-10 cursor-pointer items-center rounded-full bg-violet-600 px-5 text-sm font-medium text-white shadow-lg shadow-violet-600/25 hover:bg-violet-500">
+            Choose MP3s
+            <input className="sr-only" type="file" accept=".mp3,audio/mpeg" multiple onChange={(event) => void addAudio(event.target.files, true)} />
+          </label>
+          <span className="text-sm text-white/50">{tracks.length} / 40 selected</span>
+        </div>
+        <div className="space-y-2">
+          {tracks.map((track, index) => (
+            <div key={`${track.file.name}-${index}`} className="grid gap-2 rounded-lg bg-black/30 p-3 sm:grid-cols-[1fr_auto]">
+              <Input
+                value={track.title}
+                onChange={(event) =>
+                  setTracks((current) => current.map((item, itemIndex) => (itemIndex === index ? { ...item, title: event.target.value } : item)))
+                }
+              />
+              <button type="button" className="text-sm text-white/50 hover:text-white" onClick={() => setTracks((current) => current.filter((_, itemIndex) => itemIndex !== index))}>
+                Remove
+              </button>
+            </div>
+          ))}
+        </div>
+        <label className="flex items-start gap-2 text-sm text-white/70">
+          <input type="checkbox" checked={rights} onChange={(event) => setRights(event.target.checked)} className="mt-1" />
+          I have the right to post this music on Vibra.
+        </label>
+        {error && <p className="text-sm text-red-400">{error}</p>}
+        {message && <p className="text-sm text-emerald-400">{message}</p>}
+        <Button disabled={busy} onClick={() => void publishBulk()}>
+          {busy ? "Uploading…" : `Publish ${tracks.length || ""} MP3${tracks.length === 1 ? "" : "s"}`.replace("  ", " ")}
+        </Button>
+      </div>
       <div className="space-y-4 rounded-xl border border-white/10 bg-white/[0.03] p-5">
+        <h2 className="font-semibold">Or publish one release</h2>
         <label className="block text-sm text-white/70">
           Release type
           <select
@@ -132,17 +226,23 @@ export default function AdminCatalogUploadPage() {
         <Input placeholder="Songwriters" value={songwriters} onChange={(event) => setSongwriters(event.target.value)} />
         <Input placeholder="Featured artists" value={featuredArtists} onChange={(event) => setFeaturedArtists(event.target.value)} />
         <Textarea placeholder="About this release" value={about} onChange={(event) => setAbout(event.target.value)} />
-        <label className="block text-sm text-white/70">
-          Cover thumbnail
-          <input className="mt-1 block w-full text-sm" type="file" accept="image/*" onChange={(event) => onCover(event.target.files?.[0])} />
-        </label>
+        <div className="flex flex-wrap items-center gap-3">
+          <label className="inline-flex h-10 cursor-pointer items-center rounded-full bg-white/10 px-5 text-sm font-medium text-white hover:bg-white/20">
+            Choose cover
+            <input className="sr-only" type="file" accept="image/*" onChange={(event) => onCover(event.target.files?.[0])} />
+          </label>
+          <span className="text-sm text-white/50">{cover ? cover.name : "No cover selected"}</span>
+        </div>
         {coverPreview && (
           <Image src={coverPreview} alt="" width={160} height={160} className="h-40 w-40 rounded-xl object-cover" unoptimized />
         )}
-        <label className="block text-sm text-white/70">
-          Audio files ({config.minTracks}–40)
-          <input className="mt-1 block w-full text-sm" type="file" accept="audio/*" multiple onChange={(event) => void onAudio(event.target.files)} />
-        </label>
+        <div className="flex flex-wrap items-center gap-3">
+          <label className="inline-flex h-10 cursor-pointer items-center rounded-full bg-violet-600 px-5 text-sm font-medium text-white shadow-lg shadow-violet-600/25 hover:bg-violet-500">
+            Choose audio
+            <input className="sr-only" type="file" accept="audio/*" multiple onChange={(event) => { setTracks([]); void addAudio(event.target.files); }} />
+          </label>
+          <span className="text-sm text-white/50">{config.minTracks}–40 files</span>
+        </div>
         <div className="space-y-2">
           {tracks.map((track, index) => (
             <div key={`${track.file.name}-${index}`} className="grid gap-2 rounded-lg bg-white/5 p-3 sm:grid-cols-[1fr_auto]">
