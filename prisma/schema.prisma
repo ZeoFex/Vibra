@@ -55,8 +55,25 @@ model User {
   communityMessages CommunityMessage[]
   notifications     AppNotification[]
   voiceNotes        VoiceNote[]
+  listens           Listen[]
 
   @@map("users")
+}
+
+model Listen {
+  id         String   @id @default(uuid())
+  userId     String   @map("user_id")
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  songId     String   @map("song_id")
+  title      String
+  artistName String   @map("artist_name")
+  cover      String   @default("")
+  plays      Int      @default(1)
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  @@unique([userId, songId])
+  @@index([userId])
+  @@map("listens")
 }
 
 model VoiceNote {

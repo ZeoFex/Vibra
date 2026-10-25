@@ -8,6 +8,7 @@ import { Download, Pause, Play } from "lucide-react";
 import { ShareMenu, songShareTarget } from "@/components/layout/share-platform";
 import { cn, formatNumber } from "@/lib/utils";
 import { usePlayer } from "@/lib/contexts/app-context";
+import { checkOnline } from "@/lib/client/network";
 import type { Song, Album, Artist, Playlist } from "@/types";
 
 interface PlayButtonProps {
@@ -113,7 +114,9 @@ export function DownloadControl({ song }: { song: Song }) {
       aria-label="Download"
       onClick={(event) => {
         event.stopPropagation();
-        setProgress(8);
+        void checkOnline().then((online) => {
+          if (online) setProgress(8);
+        });
       }}
       className="flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-full text-white/80 transition hover:bg-[#5b21b6] hover:text-white"
     >
@@ -169,7 +172,7 @@ export function SongCard({ song, onPlay, showArtist = true, index, showDownload 
             onClick={onThumbnailClick}
             className={cn(
               "absolute inset-0 flex cursor-pointer items-center justify-center bg-black/40 transition hover:bg-[#5b21b6]",
-              playing ? "opacity-100" : "opacity-100 sm:opacity-0 sm:group-hover:opacity-100"
+              playing ? "opacity-100" : "opacity-100 lg:opacity-0 lg:group-hover:opacity-100"
             )}
           >
             {playing ? (

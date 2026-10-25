@@ -4,6 +4,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState, t
 import type { ChatMessage, SocialProfile } from "@/types";
 import { useAuth } from "@/lib/contexts/app-context";
 import { useSocial } from "@/lib/contexts/social-context";
+import { checkOnline } from "@/lib/client/network";
 
 interface ConversationPreview {
   friend: SocialProfile;
@@ -47,6 +48,8 @@ export function ChatProvider({ children }: { children: ReactNode }) {
   const sendPrivateMessage = useCallback(
     (friendId: string, content: string) => {
       if (!isFriend(friendId) || !content.trim()) return;
+      void checkOnline().then((online) => {
+        if (!online) return;
       void fetch("/api/social/messages", {
         method: "POST",
         credentials: "include",
@@ -54,6 +57,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
         body: JSON.stringify({ toUserId: friendId, content: content.trim() }),
       }).then(() => refresh());
       setReadAt((prev) => ({ ...prev, [friendId]: new Date().toISOString() }));
+      });
     },
     [isFriend, refresh]
   );
@@ -61,12 +65,15 @@ export function ChatProvider({ children }: { children: ReactNode }) {
   const sendCommunityMessage = useCallback(
     (content: string) => {
       if (!content.trim()) return;
+      void checkOnline().then((online) => {
+        if (!online) return;
       void fetch("/api/social/messages", {
         method: "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ community: true, content: content.trim() }),
       }).then(() => refresh());
+      });
     },
     [refresh]
   );

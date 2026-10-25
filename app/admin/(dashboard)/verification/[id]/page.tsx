@@ -100,7 +100,11 @@ export default function VerificationDetailPage({ params }: { params: Promise<{ i
 
         <div className="space-y-4">
           <div className="rounded-xl border border-white/10 bg-white/[0.03] p-6 text-center">
-            <Image src={app.profilePhoto} alt="" width={120} height={120} className="mx-auto rounded-full" />
+            {app.profilePhoto ? (
+              <Image src={app.profilePhoto} alt="" width={120} height={120} className="mx-auto rounded-full object-cover" />
+            ) : (
+              <span className="mx-auto flex h-[120px] w-[120px] items-center justify-center rounded-full bg-violet-700 text-3xl font-semibold">{app.stageName.slice(0, 1)}</span>
+            )}
             <p className="mt-4 font-semibold">{app.stageName}</p>
             <p className="text-sm text-white/50">{app.sampleSongUrls.length} sample tracks</p>
           </div>

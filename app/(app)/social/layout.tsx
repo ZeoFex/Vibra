@@ -21,7 +21,7 @@ export default function SocialLayout({ children }: { children: React.ReactNode }
 
   return (
     <div className="mx-auto max-w-2xl space-y-4 sm:space-y-6">
-      <div className="flex gap-2 overflow-x-auto scroll-pl-safe pb-2 scrollbar-hide scroll-snap-x -mx-1 px-1">
+      <div className="grid grid-cols-5 gap-1.5">
         {tabs.map(({ href, label, exact }) => {
           const active = exact ? pathname === href : pathname.startsWith(href);
           return (
@@ -29,7 +29,7 @@ export default function SocialLayout({ children }: { children: React.ReactNode }
               key={href}
               href={href}
               className={cn(
-                "relative flex shrink-0 items-center gap-2 rounded-full px-4 py-2 text-sm font-medium transition-colors",
+                "flex min-h-10 items-center justify-center rounded-2xl px-1 py-1.5 text-center text-[11px] font-medium leading-tight transition-colors sm:text-sm",
                 active ? "bg-white text-black" : "bg-white/10 text-white/70 hover:bg-white/20"
               )}
             >

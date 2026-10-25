@@ -13,6 +13,7 @@ import {
 import type { Album, Artist, Song, DownloadedTrack } from "@/types";
 import type { User } from "@/types";
 import { resolveAudioUrl } from "@/lib/audio/resolve-audio-url";
+import { reportOffline } from "@/lib/client/network";
 
 type RepeatMode = "off" | "all" | "one";
 
@@ -77,6 +78,8 @@ const PlayerContext = createContext<PlayerContextValue | null>(null);
 
 export function PlayerProvider({ children }: { children: ReactNode }) {
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const nextRef = useRef<() => void>(() => {});
+  const previousRef = useRef<() => void>(() => {});
   const loadedSongIdRef = useRef<string | null>(null);
 
   const [state, setState] = useState<PlayerState>({
@@ -98,6 +101,10 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     savedDownloads: [],
     downloads: new Map(),
   });
+  const downloadsRef = useRef(state.downloads);
+  useEffect(() => {
+    downloadsRef.current = state.downloads;
+  }, [state.downloads]);
 
   const libraryReady = useRef(false);
 
@@ -166,11 +173,29 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     }
     const audio = audioRef.current;
     const onTimeUpdate = () => {
+      if ("mediaSession" in navigator && Number.isFinite(audio.duration) && audio.duration > 0) {
+        try {
+          navigator.mediaSession.setPositionState({
+            duration: audio.duration,
+            playbackRate: audio.playbackRate || 1,
+            position: Math.min(audio.currentTime, audio.duration),
+          });
+        } catch {
+          /* position can throw if the browser is not ready */
+        }
+      }
       setState((prev) => {
         if (!prev.currentSong || loadedSongIdRef.current !== prev.currentSong.id) return prev;
         return { ...prev, progress: Math.floor(audio.currentTime) };
       });
     };
+
+    if ("mediaSession" in navigator) {
+      navigator.mediaSession.setActionHandler("play", () => setState((prev) => ({ ...prev, isPlaying: true })));
+      navigator.mediaSession.setActionHandler("pause", () => setState((prev) => ({ ...prev, isPlaying: false })));
+      navigator.mediaSession.setActionHandler("nexttrack", () => nextRef.current());
+      navigator.mediaSession.setActionHandler("previoustrack", () => previousRef.current());
+    }
 
     const onEnded = () => {
       setState((prev) => {
@@ -284,7 +309,27 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     else audio.pause();
   }, [state.isPlaying, state.currentSong?.id]);
 
+  useEffect(() => {
+    const song = state.currentSong;
+    if (!song) return;
+    if (typeof navigator !== "undefined" && navigator.onLine === false) return;
+    void fetch("/api/listens", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        songId: song.id,
+        title: song.title,
+        artistName: song.artistName,
+        cover: song.cover,
+      }),
+    });
+  }, [state.currentSong?.id]);
+
   const play = useCallback((song: Song, queue?: Song[]) => {
+    if (!downloadsRef.current.has(song.id) && typeof navigator !== "undefined" && navigator.onLine === false) {
+      reportOffline();
+      return;
+    }
     setState((prev) => ({
       ...prev,
       currentSong: song,
@@ -360,6 +405,32 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       };
     });
   }, []);
+
+  useEffect(() => {
+    nextRef.current = next;
+    previousRef.current = previous;
+  }, [next, previous]);
+
+  useEffect(() => {
+    const song = state.currentSong;
+    if (!song || typeof navigator === "undefined" || !("mediaSession" in navigator)) return;
+    const cover = song.cover
+      ? song.cover.startsWith("http")
+        ? song.cover
+        : `${window.location.origin}${song.cover.startsWith("/") ? song.cover : `/${song.cover}`}`
+      : `${window.location.origin}/vibra-logo-clear.png`;
+    navigator.mediaSession.metadata = new MediaMetadata({
+      title: song.title,
+      artist: song.artistName,
+      album: song.albumTitle || "Vibra",
+      artwork: [{ src: cover, sizes: "512x512" }],
+    });
+    navigator.mediaSession.playbackState = state.isPlaying ? "playing" : "paused";
+    document.title = `${song.title} — ${song.artistName}`;
+    return () => {
+      document.title = "Vibra — Feel Every Beat";
+    };
+  }, [state.currentSong, state.isPlaying]);
 
   const toggleShuffle = useCallback(() => {
     setState((prev) => ({ ...prev, shuffle: !prev.shuffle }));

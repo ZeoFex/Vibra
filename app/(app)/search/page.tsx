@@ -55,6 +55,11 @@ function SearchPage() {
 
     const handle = setTimeout(() => {
       setSearching(true);
+      import("@/lib/client/network").then(({ checkOnline }) => checkOnline()).then((online) => {
+        if (!online) {
+          setSearching(false);
+          return;
+        }
       fetch(`/api/music/search?q=${encodeURIComponent(q)}`)
         .then(async (res) => {
           const data = (await res.json()) as { songs?: Song[] };
@@ -62,6 +67,7 @@ function SearchPage() {
         })
         .catch(() => setSongs([]))
         .finally(() => setSearching(false));
+      });
     }, 300);
 
     return () => clearTimeout(handle);

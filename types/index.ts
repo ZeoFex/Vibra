@@ -100,6 +100,8 @@ export interface Song {
   releaseDate: string;
   trackNumber?: number;
   audioUrl?: string;
+  producers?: string;
+  songwriters?: string;
 }
 
 export type ArtistUploadStatus = "draft" | "pending" | "published" | "rejected";

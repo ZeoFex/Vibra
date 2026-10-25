@@ -8,6 +8,7 @@ import { useAuth } from "@/lib/contexts/app-context";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import type { User, UserPreferences } from "@/types";
+import { checkOnline } from "@/lib/client/network";
 
 const fallbackPrefs: UserPreferences = {
   emailNotifications: true,
@@ -55,6 +56,7 @@ export default function ProfilePage() {
       setError("New passwords do not match.");
       return;
     }
+    if (!(await checkOnline())) return;
     setBusy(true);
     const response = await fetch("/api/auth/settings", {
       method: "PATCH",

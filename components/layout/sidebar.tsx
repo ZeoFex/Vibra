@@ -13,13 +13,14 @@ import {
   Settings,
   LogOut,
   Mic,
+  Plus,
   Mic2,
   ChevronLeft,
   ChevronRight,
-  Menu,
-  X,
 } from "lucide-react";
+import { useState } from "react";
 import { usePathname } from "next/navigation";
+import { ProfileSheet } from "@/components/layout/profile-sheet";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/lib/contexts/app-context";
 import { useSocial } from "@/lib/contexts/social-context";
@@ -39,12 +40,7 @@ const navItems = [
   { href: "/premium", label: "Premium", icon: Crown },
 ];
 
-interface SidebarProps {
-  mobileOpen: boolean;
-  setMobileOpen: (open: boolean) => void;
-}
-
-export function Sidebar({ mobileOpen, setMobileOpen }: SidebarProps) {
+export function Sidebar() {
   const pathname = usePathname();
   const { user, logout } = useAuth();
   const { pendingCount } = useSocial();
@@ -52,7 +48,7 @@ export function Sidebar({ mobileOpen, setMobileOpen }: SidebarProps) {
 
   const renderNav = () => (
     <>
-      <Link href="/home" className="mb-8 flex items-center gap-3 px-2" onClick={() => setMobileOpen(false)}>
+      <Link href="/home" className="mb-8 flex items-center gap-3 px-2">
         <VibraLogo size={64} className="h-16 w-16 rounded-2xl" />
         <p className="text-xs text-white/40">Feel Every Beat</p>
       </Link>
@@ -62,7 +58,6 @@ export function Sidebar({ mobileOpen, setMobileOpen }: SidebarProps) {
           <Link
             key={href}
             href={href}
-            onClick={() => setMobileOpen(false)}
             className={cn(
               "flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors",
               pathname === href || pathname.startsWith(href + "/")
@@ -89,7 +84,6 @@ export function Sidebar({ mobileOpen, setMobileOpen }: SidebarProps) {
       <div className="mt-auto space-y-2 border-t border-white/10 pt-4">
         <Link
           href="/artist/login"
-          onClick={() => setMobileOpen(false)}
           className="flex items-center gap-3 rounded-xl px-3 py-2 text-sm font-medium text-violet-300 transition-colors hover:bg-white/5"
         >
           <Mic2 size={18} />
@@ -97,7 +91,6 @@ export function Sidebar({ mobileOpen, setMobileOpen }: SidebarProps) {
         </Link>
         <Link
           href="/profile"
-          onClick={() => setMobileOpen(false)}
           className="flex items-center gap-3 rounded-xl px-3 py-2 transition-colors hover:bg-white/5"
         >
           <Image
@@ -125,63 +118,103 @@ export function Sidebar({ mobileOpen, setMobileOpen }: SidebarProps) {
   );
 
   return (
-    <>
-      {mobileOpen && (
-        <div className="fixed inset-0 z-50 lg:hidden">
-          <div className="absolute inset-0 bg-black/60" onClick={() => setMobileOpen(false)} />
-          <aside className="relative flex h-full w-[min(18rem,85vw)] flex-col bg-zinc-950 p-4">
-            <button
-              onClick={() => setMobileOpen(false)}
-              className="absolute right-4 top-4 text-white/60"
-              aria-label="Close menu"
-            >
-              <X size={20} />
-            </button>
-            {renderNav()}
-          </aside>
-        </div>
-      )}
-
-      <aside className="hidden h-full w-64 shrink-0 flex-col overflow-hidden border-r border-white/10 bg-black/40 p-4 backdrop-blur-xl lg:flex">
-        {renderNav()}
-      </aside>
-    </>
+    <aside className="hidden h-full w-64 shrink-0 flex-col overflow-hidden border-r border-white/10 bg-black/40 p-4 backdrop-blur-xl lg:flex">
+      {renderNav()}
+    </aside>
   );
 }
 
-interface TopBarProps {
-  onMenuClick: () => void;
+const mobileTabs = [
+  { href: "/home", label: "Home", icon: Home },
+  { href: "/search", label: "Search", icon: Search },
+  { href: "/library", label: "Library", icon: Library },
+  { href: "/premium", label: "Premium", icon: Crown },
+  { href: "/artist/upload", label: "Create", icon: Plus },
+];
+
+export function MobileTabBar() {
+  const pathname = usePathname();
+  return (
+    <nav className="fixed inset-x-0 bottom-0 z-[60] border-t border-white/10 bg-black/95 px-1 pb-[env(safe-area-inset-bottom,0px)] backdrop-blur-xl lg:hidden">
+      <div className="grid h-[var(--tab-bar-height)] grid-cols-5">
+        {mobileTabs.map(({ href, label, icon: Icon }) => {
+          const active = pathname === href || pathname.startsWith(href + "/");
+          return (
+            <Link
+              key={href}
+              href={href}
+              className={cn(
+                "flex flex-col items-center justify-center gap-1 text-[10px] font-medium",
+                active ? "text-white" : "text-white/45"
+              )}
+            >
+              {href === "/premium" ? (
+                <VibraLogo size={20} className="h-5 w-5 rounded-md" />
+              ) : (
+                <Icon size={20} />
+              )}
+              {label}
+            </Link>
+          );
+        })}
+      </div>
+    </nav>
+  );
 }
 
-export function TopBar({ onMenuClick }: TopBarProps) {
+const mobileChips = [
+  { href: "/home", label: "All", exact: true },
+  { href: "/search", label: "Music", exact: false },
+  { href: "/albums", label: "Albums", exact: false },
+  { href: "/recordings", label: "Recordings", exact: false },
+  { href: "/ai", label: "Vibra AI", exact: false },
+  { href: "/notifications", label: "Notifications", exact: false },
+];
+
+export function TopBar() {
+  const { user } = useAuth();
+  const pathname = usePathname();
+  const [profileOpen, setProfileOpen] = useState(false);
+  const initial = (user?.name || user?.email || "V").trim().charAt(0).toUpperCase();
+
   return (
-    <header className="flex shrink-0 items-center justify-between gap-2 border-b border-white/5 bg-black/40 px-3 py-3 backdrop-blur-xl sm:px-4 md:px-6">
-      <div className="flex min-w-0 flex-1 items-center gap-1 sm:gap-2">
-        <button
-          onClick={onMenuClick}
-          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-violet-400/40 bg-[#5b21b6] lg:hidden"
-          aria-label="Open menu"
-        >
-          <Menu size={20} className="text-violet-200" />
-        </button>
-        <Link href="/home" className="shrink-0 lg:hidden" aria-label="Vibra home">
-          <VibraLogo size={44} className="h-11 w-11 rounded-xl" />
-        </Link>
-        <Button variant="ghost" size="icon-sm" className="hidden md:flex">
-          <ChevronLeft size={18} />
-        </Button>
-        <Button variant="ghost" size="icon-sm" className="hidden md:flex">
-          <ChevronRight size={18} />
-        </Button>
-      </div>
-      <div className="flex shrink-0 items-center gap-2">
-        <Link href="/premium">
-          <Button variant="premium" size="sm" className="gap-1 px-3 sm:px-4">
-            <Crown size={14} />
-            <span className="hidden sm:inline">Upgrade</span>
-          </Button>
-        </Link>
-      </div>
+    <>
+    <header className="shrink-0 border-b border-white/5 bg-black/40 backdrop-blur-xl">
+    <div className="hidden items-center gap-2 px-4 py-3 md:flex md:px-6">
+      <Button variant="ghost" size="icon-sm">
+        <ChevronLeft size={18} />
+      </Button>
+      <Button variant="ghost" size="icon-sm">
+        <ChevronRight size={18} />
+      </Button>
+    </div>
+    <div className="flex items-center gap-2 overflow-x-auto px-3 py-3 scrollbar-hide lg:hidden">
+      <button
+        type="button"
+        aria-label="Open profile"
+        onClick={() => setProfileOpen(true)}
+        className="flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-full bg-[#5b21b6] text-sm font-bold text-violet-100"
+      >
+        {initial}
+      </button>
+      {mobileChips.map((chip) => {
+        const active = chip.exact ? pathname === chip.href : pathname === chip.href || pathname.startsWith(chip.href + "/");
+        return (
+          <Link
+            key={chip.href}
+            href={chip.href}
+            className={cn(
+              "shrink-0 rounded-full px-4 py-1.5 text-sm font-medium",
+              active ? "bg-white text-black" : "bg-white/10 text-white"
+            )}
+          >
+            {chip.label}
+          </Link>
+        );
+      })}
+    </div>
     </header>
+    <ProfileSheet open={profileOpen} onClose={() => setProfileOpen(false)} />
+    </>
   );
 }

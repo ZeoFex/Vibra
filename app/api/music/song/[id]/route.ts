@@ -51,6 +51,8 @@ export async function GET(_request: Request, { params }: Params) {
     plays: 0,
     releaseDate: upload.releaseDate.toISOString().slice(0, 10),
     audioUrl: upload.audioUrl ?? (upload.audio ? getUploadAudioPath(upload.id) : undefined),
+    producers: upload.producers,
+    songwriters: upload.songwriters ?? "",
   };
   return jsonOk({ song });
 }

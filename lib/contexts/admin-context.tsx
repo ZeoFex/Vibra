@@ -22,14 +22,6 @@ import type {
   TicketStatus,
   PayoutStatus,
 } from "@/types/admin";
-import {
-  artistApplications as initialApplications,
-  musicReviewQueue as initialMusicQueue,
-  moderationReports as initialReports,
-  supportTickets as initialTickets,
-  activityLogs as initialLogs,
-  artistPayouts as initialPayouts,
-} from "@/lib/mock-data/admin";
 
 interface AdminContextValue {
   admin: AdminUser | null;
@@ -57,12 +49,12 @@ const AdminContext = createContext<AdminContextValue | null>(null);
 export function AdminProvider({ children }: { children: ReactNode }) {
   const [admin, setAdmin] = useState<AdminUser | null>(null);
   const [isAuthReady, setIsAuthReady] = useState(false);
-  const [applications, setApplications] = useState(initialApplications);
-  const [musicQueue, setMusicQueue] = useState(initialMusicQueue);
-  const [reports, setReports] = useState(initialReports);
-  const [tickets, setTickets] = useState(initialTickets);
-  const [activityLogs, setActivityLogs] = useState(initialLogs);
-  const [payouts, setPayouts] = useState(initialPayouts);
+  const [applications, setApplications] = useState<ArtistApplication[]>([]);
+  const [musicQueue, setMusicQueue] = useState<MusicReviewItem[]>([]);
+  const [reports, setReports] = useState<ModerationReport[]>([]);
+  const [tickets, setTickets] = useState<SupportTicket[]>([]);
+  const [activityLogs, setActivityLogs] = useState<AdminActivityLog[]>([]);
+  const [payouts, setPayouts] = useState<ArtistPayout[]>([]);
 
   const refreshSession = useCallback(async () => {
     try {
@@ -80,9 +72,27 @@ export function AdminProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
+  const loadRecords = useCallback(async () => {
+    const res = await fetch("/api/admin/records", { credentials: "include" });
+    if (!res.ok) return;
+    const data = (await res.json()) as {
+      applications: ArtistApplication[];
+      musicQueue: MusicReviewItem[];
+      payouts: ArtistPayout[];
+    };
+    setApplications(data.applications);
+    setMusicQueue(data.musicQueue);
+    setPayouts(data.payouts);
+  }, []);
+
   useEffect(() => {
     refreshSession().finally(() => setIsAuthReady(true));
   }, [refreshSession]);
+
+  useEffect(() => {
+    if (!admin) return;
+    void loadRecords();
+  }, [admin, loadRecords]);
 
   const logAction = useCallback(
     (action: string, target: string, targetType: string, reason?: string) => {
@@ -148,6 +158,12 @@ export function AdminProvider({ children }: { children: ReactNode }) {
       );
       const app = applications.find((a) => a.id === id);
       logAction(`Application ${status}`, app?.stageName ?? id, "application", note);
+      void fetch("/api/admin/records", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ kind: "artist", id, status }),
+      });
     },
     [admin, applications, logAction]
   );
@@ -163,6 +179,12 @@ export function AdminProvider({ children }: { children: ReactNode }) {
       );
       const item = musicQueue.find((m) => m.id === id);
       logAction(`Song ${status}`, item?.title ?? id, "song", note);
+      void fetch("/api/admin/records", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ kind: "upload", id, status }),
+      });
     },
     [musicQueue, logAction]
   );

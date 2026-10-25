@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState, type MouseEvent } from "react";
 import { Mic, MoreHorizontal, Pause, Play, Trash2 } from "lucide-react";
 import { clearPendingVoice, readPendingVoice } from "@/lib/client/pending-voice";
+import { checkOnline } from "@/lib/client/network";
 
 type Note = { id: string; audioUrl: string; createdAt: string };
 
@@ -146,7 +147,7 @@ export default function RecordingsPage() {
     const load = async () => {
       try {
         const pending = await readPendingVoice().catch(() => null);
-        if (pending && pending.size > 0) {
+        if (pending && pending.size > 0 && (await checkOnline())) {
           const body = new FormData();
           body.set("audio", new File([pending], "voice.webm", { type: pending.type || "audio/webm" }));
           const saved = await fetch("/api/voice-notes", { method: "POST", body });

@@ -92,7 +92,7 @@ export default function HomePage() {
         <div className="absolute right-0 top-0 h-40 w-40 rounded-full bg-violet-500/20 blur-3xl" />
         <h1 className="relative text-2xl font-bold md:text-3xl">{greeting}</h1>
         <p className="relative mt-1 text-white/60">Discover your next favorite track</p>
-        <div className="relative mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <div className="relative mt-6 grid grid-cols-1 gap-2 min-[380px]:grid-cols-2 sm:grid-cols-4 sm:gap-3">
           {albums.slice(0, 4).map((album) => (
             <Link
               key={album.id}
