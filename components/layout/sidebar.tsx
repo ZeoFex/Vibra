@@ -9,6 +9,7 @@ import {
   Crown,
   Bell,
   Disc3,
+  SlidersHorizontal,
   Users,
   Settings,
   LogOut,
@@ -34,6 +35,7 @@ const navItems = [
   { href: "/library", label: "Library", icon: Library },
   { href: "/recordings", label: "Recordings", icon: Mic },
   { href: "/albums", label: "Albums", icon: Disc3 },
+  { href: "/dj", label: "DJ Studio", icon: SlidersHorizontal },
   { href: "/ai", label: "Vibra AI", icon: null },
   { href: "/social", label: "Social", icon: Users },
   { href: "/notifications", label: "Notifications", icon: Bell },
@@ -118,7 +120,7 @@ export function Sidebar() {
   );
 
   return (
-    <aside className="hidden h-full w-64 shrink-0 flex-col overflow-hidden border-r border-white/10 bg-black/40 p-4 backdrop-blur-xl lg:flex">
+    <aside className="relative z-[70] hidden h-full w-64 shrink-0 flex-col overflow-hidden border-r border-white/10 bg-black/40 p-4 backdrop-blur-xl lg:flex">
       {renderNav()}
     </aside>
   );
@@ -166,6 +168,7 @@ const mobileChips = [
   { href: "/home", label: "All", exact: true },
   { href: "/search", label: "Music", exact: false },
   { href: "/albums", label: "Albums", exact: false },
+  { href: "/dj", label: "DJ Studio", exact: false },
   { href: "/recordings", label: "Recordings", exact: false },
   { href: "/ai", label: "Vibra AI", exact: false },
   { href: "/notifications", label: "Notifications", exact: false },

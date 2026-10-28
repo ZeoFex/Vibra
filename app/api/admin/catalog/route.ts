@@ -7,6 +7,7 @@ import { hasPermission } from "@/types/admin";
 import { uploadCatalogAudio, uploadCatalogImage } from "@/lib/cloudinary";
 import { ALLOWED_AUDIO_MIME_TYPES, MAX_AUDIO_BYTES, normalizeAudioMimeType } from "@/lib/audio/constants";
 import { getReleaseTypeConfig, type ReleaseType } from "@/lib/constants/release-types";
+import { readId3 } from "@/lib/audio/id3";
 
 export const runtime = "nodejs";
 
@@ -59,13 +60,14 @@ export async function POST(request: Request) {
 
   if (!artistName) return jsonError("Artist name is required");
   if (!bulk && !albumTitle) return jsonError("Release title and artist name are required");
-  if (!(cover instanceof File) || cover.size === 0) return jsonError("A cover image is required");
   if (!bulk && audioFiles.length < config.minTracks) return jsonError(`Add at least ${config.minTracks} track(s) for a ${config.label}`);
   if (bulk && audioFiles.length === 0) return jsonError("Add at least one MP3");
   if (audioFiles.length > BATCH_LIMIT) return jsonError(`Upload at most ${BATCH_LIMIT} tracks at a time`);
 
   const artistId = await catalogArtistId();
-  const coverUrl = await uploadCatalogImage(Buffer.from(await cover.arrayBuffer()));
+  const coverUrl = cover instanceof File && cover.size > 0
+    ? await uploadCatalogImage(Buffer.from(await cover.arrayBuffer()))
+    : "/vibra-logo.jpg";
   const albumGroupId = randomUUID();
   const created: string[] = [];
   const skipped: { title: string; reason: string }[] = [];
@@ -87,10 +89,23 @@ export async function POST(request: Request) {
       continue;
     }
 
+    const audioBuffer = Buffer.from(await file.arrayBuffer());
+    const tags = readId3(audioBuffer);
+    const formArtist = String(formData.get(`artist-${index}`) ?? "").trim();
+    const formWriters = String(formData.get(`songwriter-${index}`) ?? "").trim();
+    const trackTitle = title || tags.title || titleFromFile(file.name);
+    const trackArtist = formArtist || artistName || tags.artist || "Unknown artist";
+    const trackAlbum = bulk ? tags.album || trackTitle : albumTitle || tags.album || trackTitle;
+    const trackWriters = formWriters || String(formData.get("songwriters") ?? "").trim() || tags.songwriter || null;
+    let trackCover = coverUrl;
+    if (tags.picture && tags.picture.length > 32) {
+      trackCover = await uploadCatalogImage(Buffer.from(tags.picture));
+    }
+
     const duplicate = await prisma.artistUpload.findFirst({
       where: {
-        title: { equals: title, mode: "insensitive" },
-        artistName: { equals: artistName, mode: "insensitive" },
+        title: { equals: trackTitle, mode: "insensitive" },
+        artistName: { equals: trackArtist, mode: "insensitive" },
         status: { not: "rejected" },
       },
       select: { id: true },
@@ -100,24 +115,24 @@ export async function POST(request: Request) {
       continue;
     }
 
-    const audioUrl = await uploadCatalogAudio(Buffer.from(await file.arrayBuffer()), file.name);
+    const audioUrl = await uploadCatalogAudio(audioBuffer, file.name);
     const durationRaw = Number.parseInt(String(formData.get(`duration-${index}`) ?? "0"), 10);
     await prisma.artistUpload.create({
       data: {
         artistId,
-        title,
-        artistName,
-        albumTitle: bulk ? title : albumTitle,
+        title: trackTitle,
+        artistName: trackArtist,
+        albumTitle: trackAlbum,
         releaseType: bulk ? "single" : releaseType,
         albumGroupId: bulk ? randomUUID() : albumGroupId,
         trackNumber: index + 1,
         genre,
         about: about || null,
-        producers,
-        songwriters: String(formData.get("songwriters") ?? "").trim() || null,
+        producers: producers || trackArtist,
+        songwriters: trackWriters,
         featuredArtists: String(formData.get("featuredArtists") ?? "").trim() || null,
         lyrics: null,
-        coverUrl,
+        coverUrl: trackCover,
         audioFileName: file.name,
         audioUrl,
         duration: Number.isFinite(durationRaw) && durationRaw > 0 ? durationRaw : 180,
@@ -127,8 +142,39 @@ export async function POST(request: Request) {
         status: "published",
       },
     });
-    created.push(title);
+    created.push(trackTitle);
   }
 
   return jsonOk({ created: created.length, skipped, albumGroupId });
+}
+
+export async function GET() {
+  const admin = await requireAdminSession();
+  if (!admin || !hasPermission(admin.role, "music-review")) return jsonError("Unauthorized", 401);
+
+  const uploads = await prisma.artistUpload.findMany({
+    where: { status: { in: ["published", "pending", "draft"] } },
+    orderBy: { submittedAt: "desc" },
+    take: 400,
+    select: {
+      id: true,
+      title: true,
+      artistName: true,
+      albumTitle: true,
+      albumGroupId: true,
+      releaseType: true,
+      genre: true,
+      songwriters: true,
+      coverUrl: true,
+      status: true,
+      submittedAt: true,
+    },
+  });
+
+  return jsonOk({
+    uploads: uploads.map((upload) => ({
+      ...upload,
+      submittedAt: upload.submittedAt.toISOString(),
+    })),
+  });
 }

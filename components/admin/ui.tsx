@@ -2,7 +2,7 @@
 
 import { useState, type ReactNode } from "react";
 import { cn } from "@/lib/utils";
-import { X } from "lucide-react";
+import { AlertTriangle, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 export function PageHeader({ title, description, actions }: { title: string; description?: string; actions?: ReactNode }) {

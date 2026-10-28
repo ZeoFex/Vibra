@@ -7,8 +7,9 @@ import { useAuth, usePlayer } from "@/lib/contexts/app-context";
 import { SocialProvider } from "@/lib/contexts/social-context";
 import { NotificationProvider } from "@/lib/contexts/notification-context";
 import { ChatProvider } from "@/lib/contexts/chat-context";
+import { DjChromeProvider } from "@/lib/dj/chrome";
 import { useRouter, usePathname } from "next/navigation";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
@@ -16,6 +17,14 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
   const { isPlayerBarVisible } = usePlayer();
+  const studio = pathname.startsWith("/dj");
+  const [immersive, setImmersive] = useState(true);
+  const fullMixer = studio && immersive;
+  const showPlayer = isPlayerBarVisible && !studio;
+
+  useEffect(() => {
+    if (studio) setImmersive(true);
+  }, [studio, pathname]);
 
   useEffect(() => {
     if (!isAuthReady) return;
@@ -37,30 +46,37 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     <SocialProvider>
       <NotificationProvider>
       <ChatProvider>
+        <DjChromeProvider immersive={fullMixer} setImmersive={setImmersive}>
         <div
           className="flex h-dvh overflow-hidden gradient-bg"
           style={{
-            ["--share-lift" as string]: isPlayerBarVisible
+            ["--share-lift" as string]: showPlayer
               ? "var(--app-chrome-bottom)"
               : "calc(var(--tab-bar-height) + env(safe-area-inset-bottom, 0px))",
           }}
         >
-          <Sidebar />
+          {!fullMixer && <Sidebar />}
           <div className="flex min-h-0 min-w-0 flex-1 flex-col">
-            <TopBar />
+            {!fullMixer && <TopBar />}
             <main
               className={cn(
-                "min-h-0 flex-1 overflow-x-hidden overflow-y-auto px-3 py-4 sm:px-4 sm:py-6 md:px-8",
-                isPlayerBarVisible ? "pb-app" : "pb-[calc(var(--tab-bar-height)+env(safe-area-inset-bottom,0px))]"
+                "min-h-0 flex-1 overflow-x-hidden overflow-y-auto",
+                fullMixer
+                  ? "p-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] sm:p-3"
+                  : cn(
+                      "px-3 py-4 sm:px-4 sm:py-6 md:px-8",
+                      showPlayer ? "pb-app" : "pb-[calc(var(--tab-bar-height)+env(safe-area-inset-bottom,0px))]"
+                    )
               )}
             >
               {children}
             </main>
           </div>
-          <PlayerBar />
-          <MobileTabBar />
+          {!studio && <PlayerBar />}
+          {!fullMixer && <MobileTabBar />}
           <OfflineNotice />
         </div>
+        </DjChromeProvider>
       </ChatProvider>
       </NotificationProvider>
     </SocialProvider>
