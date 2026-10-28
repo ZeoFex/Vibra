@@ -18,7 +18,9 @@ function mergeSongs(audius: Song[], jamendo: Song[]): Song[] {
 }
 
 export async function GET(request: Request) {
-  const query = new URL(request.url).searchParams.get("q")?.trim() ?? "";
+  const url = new URL(request.url);
+  const query = url.searchParams.get("q")?.trim() ?? "";
+  const source = url.searchParams.get("source") ?? "all";
   if (query.length < 2) return jsonOk({ songs: [] });
 
   const [jamendo, audius, published] = await Promise.all([
