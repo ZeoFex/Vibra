@@ -17,6 +17,7 @@ export default function AlbumPage({ params }: { params: Promise<{ id: string }> 
   const albumId = use(params).id;
   const audiusPlaylistId = albumId.startsWith("au-pl-") ? albumId.slice("au-pl-".length) : "";
   const jamendoAlbumId = albumId.startsWith("jm-al-") ? albumId.slice("jm-al-".length) : "";
+  const localAlbum = albumId.startsWith("artist-album-");
   const { getAlbumById, getSongsByAlbumId } = useArtistUploads();
   const { play, toggleLikeAlbum, isAlbumLiked } = usePlayer();
   const [remoteAlbum, setRemoteAlbum] = useState<Album | null>(null);
@@ -27,21 +28,24 @@ export default function AlbumPage({ params }: { params: Promise<{ id: string }> 
       ? `/api/music/playlist/${audiusPlaylistId}`
       : jamendoAlbumId
         ? `/api/music/jamendo/album/${jamendoAlbumId}`
-        : "";
+        : localAlbum
+          ? "/api/artist/uploads/published"
+          : "";
     if (!url) return;
     fetch(url)
       .then(async (res) => {
         if (!res.ok) return;
-        const data = (await res.json()) as { album?: Album; songs?: Song[] };
-        setRemoteAlbum(data.album ?? null);
-        setRemoteSongs(data.songs ?? []);
+        const data = (await res.json()) as { album?: Album; songs?: Song[]; albums?: Album[] };
+        const songs = (data.songs ?? []).filter((song) => (localAlbum ? song.albumId === albumId : true));
+        setRemoteAlbum(data.album ?? data.albums?.find((item) => item.id === albumId) ?? null);
+        setRemoteSongs(songs);
       })
       .catch(() => setRemoteSongs([]));
-  }, [audiusPlaylistId, jamendoAlbumId]);
+  }, [albumId, audiusPlaylistId, jamendoAlbumId, localAlbum]);
 
   const album = remoteAlbum ?? getAlbumById(albumId) ?? getStaticAlbumById(albumId);
   if (!album) {
-    if ((audiusPlaylistId || jamendoAlbumId) && remoteSongs === null) return <p className="text-white/50">Loading album…</p>;
+    if ((audiusPlaylistId || jamendoAlbumId || localAlbum) && remoteSongs === null) return <p className="text-white/50">Loading album…</p>;
     return <p className="text-white/50">Album not found.</p>;
   }
 

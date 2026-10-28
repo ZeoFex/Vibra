@@ -23,6 +23,31 @@ import { createPortal } from "react-dom";
 import { usePlayer } from "@/lib/contexts/app-context";
 import { cn, formatDuration } from "@/lib/utils";
 
+function SpeedButton({ size = "md" }: { size?: "sm" | "md" | "lg" }) {
+  const { playbackRate, cyclePlaybackRate } = usePlayer();
+  const label = `${playbackRate}×`;
+  return (
+    <button
+      type="button"
+      onClick={(event) => {
+        event.stopPropagation();
+        event.preventDefault();
+        cyclePlaybackRate();
+      }}
+      aria-label={`Playback speed ${label}`}
+      className={cn(
+        "cursor-pointer rounded-full border px-2 font-semibold tabular-nums",
+        playbackRate === 1 ? "border-white/20 text-white" : "border-violet-300 bg-violet-500/20 text-violet-100",
+        size === "sm" && "h-6 text-[10px]",
+        size === "md" && "h-7 text-xs",
+        size === "lg" && "h-9 text-sm"
+      )}
+    >
+      {label}
+    </button>
+  );
+}
+
 export function PlayerBar() {
   const {
     currentSong,
@@ -227,6 +252,7 @@ export function PlayerBar() {
                 <Repeat size={16} className={cn(repeat === "all" ? "text-violet-400" : "text-white/40")} />
               )}
             </button>
+            <SpeedButton />
           </div>
           <div className="hidden items-center gap-2 text-[10px] text-white/40 sm:flex sm:text-xs">
             <span>{formatDuration(progress)}</span>
@@ -267,6 +293,7 @@ export function PlayerBar() {
                 <Repeat size={14} className={cn(repeat === "all" ? "text-violet-200" : "text-white/70")} />
               )}
             </button>
+            <SpeedButton size="sm" />
             <button type="button" onClick={() => toggleLikeSong(currentSong)} aria-label="Favorite" className="cursor-pointer p-0.5">
               <Heart size={15} className={cn(isSongLiked(currentSong.id) ? "fill-violet-200 text-violet-200" : "text-white/70")} />
             </button>
@@ -383,6 +410,7 @@ export function PlayerBar() {
                   <Repeat size={22} className={cn(repeat === "all" ? "text-white" : "text-white/70")} />
                 )}
               </button>
+              <SpeedButton size="lg" />
             </div>
             <div className="mt-4 flex items-center justify-between text-white/80">
               <ShareMenu target={songShareTarget(currentSong)} iconOnly />
@@ -430,8 +458,9 @@ export function PlayerBar() {
         document.body
       )}
       {mounted && showNowPlaying && createPortal(
-        <div className="fixed inset-x-0 bottom-[var(--app-chrome-bottom)] top-0 z-[60] hidden overflow-hidden bg-zinc-950 lg:left-64 lg:flex">
-          <div className="min-h-0 min-w-0 flex-1 overflow-y-auto px-8 py-6">
+        <div className="pointer-events-none fixed inset-0 z-[60] hidden lg:block">
+          <div className="pointer-events-auto absolute bottom-[var(--app-chrome-bottom)] left-64 right-0 top-0 flex overflow-hidden bg-zinc-950">
+          <div className="h-full min-h-0 min-w-0 overflow-y-auto px-8 py-6">
             <div className="flex items-end gap-6">
               <div className="relative h-44 w-44 shrink-0 overflow-hidden rounded-md shadow-lg">
                 <Image src={currentSong.cover} alt={currentSong.albumTitle || currentSong.title} fill className="object-cover" sizes="176px" />
@@ -508,6 +537,7 @@ export function PlayerBar() {
           <button type="button" onClick={() => setShowNowPlaying(false)} className="absolute right-4 top-4 cursor-pointer text-white/70 hover:text-white xl:hidden" aria-label="Close">
             <X size={20} />
           </button>
+          </div>
         </div>,
         document.body
       )}

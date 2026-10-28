@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Search as SearchIcon } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { Search as SearchIcon, X } from "lucide-react";
 import { usePlayer } from "@/lib/contexts/app-context";
 import {
   SectionHeader,
@@ -18,6 +19,8 @@ import type { AudiusGenre } from "@/lib/audius";
 
 export default function HomePage() {
   const { play } = usePlayer();
+  const router = useRouter();
+  const [search, setSearch] = useState("");
   const [genres, setGenres] = useState<AudiusGenre[]>([]);
   const [songs, setSongs] = useState<Song[]>([]);
   const [albums, setAlbums] = useState<Album[]>([]);
@@ -42,7 +45,14 @@ export default function HomePage() {
           artists?: Artist[];
         };
         setGenres(Array.isArray(data.genres) ? data.genres : []);
-        setSongs(Array.isArray(data.songs) ? data.songs : []);
+        const seen = new Set<string>();
+        setSongs((Array.isArray(data.songs) ? data.songs : []).filter((song) => {
+          const key = `${song.title}|${song.artistName}`.toLowerCase();
+          if (seen.has(song.id) || seen.has(key)) return false;
+          seen.add(song.id);
+          seen.add(key);
+          return true;
+        }));
         setAlbums(Array.isArray(data.albums) ? data.albums : []);
         setArtists(Array.isArray(data.artists) ? data.artists : []);
       })
@@ -65,27 +75,48 @@ export default function HomePage() {
       ? `/api/music/playlist/${audiusId}`
       : jamendoId
         ? `/api/music/jamendo/album/${jamendoId}`
-        : "";
+        : album.id.startsWith("artist-album-")
+          ? `/api/artist/uploads/published`
+          : "";
     if (!url) return;
     void fetch(url)
       .then(async (res) => {
         const data = (await res.json()) as { songs?: Song[] };
-        const tracks = data.songs ?? [];
+        const tracks = (data.songs ?? []).filter((song) =>
+          album.id.startsWith("artist-album-") ? song.albumId === album.id : true
+        );
         if (tracks[0]) play(tracks[0], tracks);
       });
   };
 
   return (
     <div className="space-y-8 sm:space-y-10">
-      <form action="/search" className="relative">
+      <form
+        className="relative"
+        onSubmit={(event) => {
+          event.preventDefault();
+          const q = search.trim();
+          if (q.length < 2) return;
+          router.push(`/search?q=${encodeURIComponent(q)}`);
+        }}
+      >
         <SearchIcon size={18} className="pointer-events-none absolute left-4 top-1/2 z-10 -translate-y-1/2 text-violet-200" />
         <Input
-          name="q"
+          value={search}
+          onChange={(event) => setSearch(event.target.value)}
           placeholder="Search songs, artists, albums..."
-          className="h-12 rounded-full border-violet-400/20 bg-[#1a1028] pl-12 text-base shadow-none backdrop-blur-none"
-          required
-          minLength={2}
+          className="h-12 rounded-full border-violet-400/20 bg-[#1a1028] pl-12 pr-12 text-base shadow-none backdrop-blur-none"
         />
+        {search && (
+          <button
+            type="button"
+            aria-label="Clear search"
+            onClick={() => setSearch("")}
+            className="absolute right-3 top-1/2 z-10 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-full bg-white/10 text-white/70 hover:bg-white/20 hover:text-white"
+          >
+            <X size={14} />
+          </button>
+        )}
       </form>
 
       <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-violet-600/30 to-fuchsia-600/20 p-6 md:p-8">
@@ -137,7 +168,7 @@ export default function HomePage() {
         <SectionHeader title="Popular Artists" href="/search" />
         <div className="grid grid-cols-2 gap-6 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
           {artistList.map((artist, i) => (
-            <div key={artist.id}>
+            <div key={`${artist.id}-${i}`}>
               <p className="mb-2 text-center text-xs font-bold text-white/40">#{i + 1}</p>
               <ArtistCard artist={artist} />
             </div>

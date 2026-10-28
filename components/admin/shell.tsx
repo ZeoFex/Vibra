@@ -37,6 +37,7 @@ const navItems: { href: string; label: string; icon: React.ComponentType<{ size?
   { href: "/admin/verification", label: "Verification", icon: ShieldCheck, permission: "verification" },
   { href: "/admin/music-review", label: "Music Review", icon: Music, permission: "music-review" },
   { href: "/admin/uploads", label: "Upload Music", icon: Music, permission: "music-review" },
+  { href: "/admin/catalog", label: "Uploaded Music", icon: ListMusic, permission: "music-review" },
   { href: "/admin/users", label: "Users", icon: Users, permission: "users" },
   { href: "/admin/artists", label: "Artists", icon: Mic2, permission: "artists" },
   { href: "/admin/artist-accounts", label: "Reviewers", icon: UserPlus, permission: "sub-admins" },
