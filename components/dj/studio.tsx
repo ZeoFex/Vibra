@@ -121,7 +121,7 @@ export function DjStudio() {
         </button>
       </header>
 
-      <div className="grid gap-2 xl:grid-cols-[minmax(0,1fr)_220px_minmax(0,1fr)]">
+      <div className="grid grid-cols-1 gap-2 landscape:grid-cols-[minmax(0,1fr)_7.5rem_minmax(0,1fr)] xl:grid-cols-[minmax(0,1fr)_220px_minmax(0,1fr)]">
         <DeckFace
           id="a"
           deck={decks.a}
