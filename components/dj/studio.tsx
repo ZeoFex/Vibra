@@ -32,6 +32,32 @@ const emptyDeck = () => ({
 const loops = [1, 2, 4, 8, 16];
 const stingers: StingerKind[] = ["airhorn", "impact", "riser", "siren", "stab"];
 
+function useKeyboardFrame() {
+  const [frame, setFrame] = useState({ top: 0, height: 0, open: false });
+
+  useEffect(() => {
+    const viewport = window.visualViewport;
+    if (!viewport) return;
+    const update = () => {
+      const covered = window.innerHeight - viewport.height - viewport.offsetTop;
+      setFrame({
+        top: viewport.offsetTop,
+        height: viewport.height,
+        open: covered > 80,
+      });
+    };
+    update();
+    viewport.addEventListener("resize", update);
+    viewport.addEventListener("scroll", update);
+    return () => {
+      viewport.removeEventListener("resize", update);
+      viewport.removeEventListener("scroll", update);
+    };
+  }, []);
+
+  return frame;
+}
+
 function formatTime(seconds: number) {
   if (!Number.isFinite(seconds) || seconds < 0) return "00:00";
   const whole = Math.floor(seconds);
@@ -409,7 +435,7 @@ function DeckFace({
           ))}
         </div>
         <div
-          className="mx-auto flex h-28 w-28 touch-none items-center justify-center rounded-full border-[10px] border-[#2a1844] bg-[#0c0714] shadow-inner"
+          className="mx-auto flex h-20 w-20 touch-none items-center justify-center rounded-full border-8 border-[#2a1844] bg-[#0c0714] shadow-inner landscape:h-16 landscape:w-16 sm:h-28 sm:w-28 sm:border-[10px]"
           onPointerDown={(event) => {
             let lastX = event.clientX;
             const target = event.currentTarget;
@@ -510,6 +536,7 @@ function EqStack({ deck, onEq }: { deck: DeckState; onEq: (band: "low" | "mid" |
 }
 
 function Browser({ onLoad }: { onLoad: (song: Song, deck: DeckId) => void }) {
+  const keyboard = useKeyboardFrame();
   const [tab, setTab] = useState<"vibra" | "online" | "device">("vibra");
   const [query, setQuery] = useState("");
   const [songs, setSongs] = useState<Song[]>([]);
@@ -578,14 +605,20 @@ function Browser({ onLoad }: { onLoad: (song: Song, deck: DeckId) => void }) {
   };
 
   return (
-    <section className="rounded-2xl border border-violet-400/20 bg-[#100818] p-3">
-      <div className="flex flex-wrap items-center gap-2">
+    <section
+      className={cn(
+        "rounded-2xl border border-violet-400/20 bg-[#100818] p-3",
+        keyboard.open && "fixed inset-x-0 z-[80] flex flex-col overflow-hidden rounded-none border-x-0 px-3 pt-3"
+      )}
+      style={keyboard.open ? { top: keyboard.top, height: keyboard.height } : undefined}
+    >
+      <div className="flex items-center gap-2 overflow-x-auto pb-1">
         {(["vibra", "online", "device"] as const).map((item) => (
           <button
             key={item}
             type="button"
             onClick={() => setTab(item)}
-            className={cn("rounded-full px-3 py-1.5 text-xs font-semibold uppercase tracking-wide", tab === item ? "bg-[#5b21b6]" : "bg-white/10 text-white/60")}
+            className={cn("h-10 shrink-0 rounded-full px-3 text-xs font-semibold uppercase tracking-wide", tab === item ? "bg-[#5b21b6]" : "bg-white/10 text-white/60")}
           >
             {item === "vibra" ? "Vibra" : item === "online" ? "Online" : "This device"}
           </button>
@@ -595,7 +628,8 @@ function Browser({ onLoad }: { onLoad: (song: Song, deck: DeckId) => void }) {
             value={query}
             onChange={(event) => setQuery(event.target.value)}
             placeholder="Search Vibra"
-            className="h-9 min-w-0 flex-1 rounded-full bg-[#0c0714]/80 px-3 text-sm outline-none"
+            enterKeyHint="search"
+            className="h-11 min-w-[10rem] flex-1 rounded-full bg-[#0c0714]/80 px-3 text-base outline-none"
           />
         )}
         {tab === "device" && (
@@ -622,9 +656,9 @@ function Browser({ onLoad }: { onLoad: (song: Song, deck: DeckId) => void }) {
         </label>
       )}
       {note && <p className="mt-2 text-xs text-violet-200">{note}</p>}
-      {tab === "online" && <WebBrowser onLoad={onLoad} />}
+      {tab === "online" && <WebBrowser onLoad={onLoad} lifted={keyboard.open} />}
       {tab !== "online" && (
-      <div className="mt-3 max-h-52 space-y-1 overflow-y-auto">
+      <div className={cn("mt-3 space-y-1 overflow-y-auto", keyboard.open ? "min-h-0 flex-1 pb-3" : "max-h-64")}>
         {songs.map((song) => (
           <div
             key={song.id}
@@ -639,8 +673,8 @@ function Browser({ onLoad }: { onLoad: (song: Song, deck: DeckId) => void }) {
               <p className="truncate text-sm">{song.title}</p>
               <p className="truncate text-xs text-white/40">{song.artistName}</p>
             </div>
-            <button type="button" onClick={() => onLoad(song, "a")} className="rounded-full bg-white/10 px-2 py-1 text-[10px] font-semibold">A</button>
-            <button type="button" onClick={() => onLoad(song, "b")} className="rounded-full bg-fuchsia-600 px-2 py-1 text-[10px] font-semibold">B</button>
+            <button type="button" onClick={() => onLoad(song, "a")} className="h-10 shrink-0 rounded-full bg-white/10 px-3 text-xs font-semibold">Deck A</button>
+            <button type="button" onClick={() => onLoad(song, "b")} className="h-10 shrink-0 rounded-full bg-fuchsia-600 px-3 text-xs font-semibold">Deck B</button>
           </div>
         ))}
         {tab === "vibra" && query.trim().length >= 2 && songs.length === 0 && (
@@ -652,7 +686,7 @@ function Browser({ onLoad }: { onLoad: (song: Song, deck: DeckId) => void }) {
   );
 }
 
-function WebBrowser({ onLoad }: { onLoad: (song: Song, deck: DeckId) => void }) {
+function WebBrowser({ onLoad, lifted }: { onLoad: (song: Song, deck: DeckId) => void; lifted: boolean }) {
   const [address, setAddress] = useState("");
   const [page, setPage] = useState("");
   const [results, setResults] = useState<Array<{ title: string; url: string; snippet: string }>>([]);
@@ -698,7 +732,7 @@ function WebBrowser({ onLoad }: { onLoad: (song: Song, deck: DeckId) => void }) 
   };
 
   return (
-    <div className="mt-3 overflow-hidden rounded-xl border border-violet-400/20 bg-[#0c0714]">
+    <div className={cn("mt-3 overflow-hidden rounded-xl border border-violet-400/20 bg-[#0c0714]", lifted && "flex min-h-0 flex-1 flex-col")}>
       <div className="flex items-center gap-2 border-b border-white/10 px-3 py-2">
         <span className="h-2.5 w-2.5 rounded-full bg-fuchsia-500" />
         <span className="h-2.5 w-2.5 rounded-full bg-violet-400" />
@@ -724,11 +758,12 @@ function WebBrowser({ onLoad }: { onLoad: (song: Song, deck: DeckId) => void }) 
             value={address}
             onChange={(event) => setAddress(event.target.value)}
             placeholder="Search the web for a song"
-            className="h-9 w-full rounded-full bg-[#1a1028] px-3 text-sm outline-none"
+            enterKeyHint="search"
+            className="h-11 w-full rounded-full bg-[#1a1028] px-3 text-base outline-none"
           />
         </form>
       </div>
-      <div className="h-[28rem] overflow-y-auto">
+      <div className={cn("overflow-y-auto", lifted ? "min-h-0 flex-1" : "h-[min(28rem,55dvh)]")}>
         {page ? (
           <iframe title="Web search" src={page} className="h-full w-full bg-white" sandbox="allow-scripts allow-same-origin allow-forms allow-popups" />
         ) : (
