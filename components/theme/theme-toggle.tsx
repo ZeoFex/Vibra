@@ -1,7 +1,6 @@
 "use client";
 
 import { Moon, Sun } from "lucide-react";
-import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 
 type Theme = "dark" | "light";
@@ -12,17 +11,13 @@ function applyTheme(theme: Theme) {
 }
 
 export function ThemeToggle() {
-  const pathname = usePathname();
   const [theme, setTheme] = useState<Theme>("dark");
-  const studio = pathname === "/dj" || pathname.startsWith("/dj/");
 
   useEffect(() => {
     setTheme(document.documentElement.dataset.theme === "light" ? "light" : "dark");
   }, []);
 
   const light = theme === "light";
-
-  if (studio) return null;
 
   return (
     <button
@@ -34,7 +29,8 @@ export function ThemeToggle() {
         setTheme(next);
         applyTheme(next);
       }}
-      className="app-chrome fixed right-3 top-[max(0.75rem,env(safe-area-inset-top))] z-[100] inline-flex h-10 w-10 items-center justify-center rounded-full border"
+      className="app-chrome fixed left-4 z-40 inline-flex h-10 w-10 items-center justify-center rounded-full border shadow-lg lg:left-[17.5rem]"
+      style={{ bottom: "calc(var(--app-chrome-bottom) + 0.75rem)" }}
     >
       {light ? <Moon size={16} /> : <Sun size={16} />}
     </button>

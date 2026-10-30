@@ -94,6 +94,7 @@ export function DjStudio() {
   const [levels, setLevels] = useState<Record<DeckId, number[]>>({ a: [], b: [] });
   const [over, setOver] = useState<DeckId | null>(null);
   const [lightTheme, setLightTheme] = useState(false);
+  const [panel, setPanel] = useState<"a" | "mix" | "b" | ToolTab>("a");
   const decksRef = useRef(decks);
   decksRef.current = decks;
   const queuesRef = useRef<Record<DeckId, Song[]>>({ a: [], b: [] });
@@ -203,7 +204,40 @@ export function DjStudio() {
         </div>
       </header>
 
-      <div className="grid shrink-0 grid-cols-1 items-start gap-2 landscape:grid-cols-[minmax(0,1fr)_12.5rem_minmax(0,1fr)] lg:gap-3 xl:grid-cols-[minmax(0,1fr)_280px_minmax(0,1fr)]">
+      <div className="flex gap-2 overflow-x-auto pb-1 lg:hidden">
+        {(
+          [
+            ["a", "Deck A"],
+            ["mix", "Mixer"],
+            ["b", "Deck B"],
+            ["songs", "Songs"],
+            ["jingles", "Jingles"],
+            ["deck", "Deck"],
+            ["loops", "Loops"],
+            ["effects", "Effects"],
+          ] as const
+        ).map(([id, label]) => (
+          <button
+            key={id}
+            type="button"
+            onClick={() => setPanel(id)}
+            className="h-10 shrink-0 rounded-full px-3 text-xs font-semibold"
+            style={{
+              backgroundColor: panel === id ? (id === "b" ? "#1493ff" : "#e10600") : "#1c1c1c",
+              color: "#ffffff",
+            }}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+
+      <div className={cn(
+        "grid shrink-0 grid-cols-1 items-start gap-2 lg:grid lg:grid-cols-[minmax(0,1fr)_12.5rem_minmax(0,1fr)] lg:gap-3 xl:grid-cols-[minmax(0,1fr)_280px_minmax(0,1fr)]",
+        panel !== "a" && panel !== "mix" && panel !== "b" && "max-lg:hidden",
+        (panel === "a" || panel === "mix" || panel === "b") && "max-lg:min-h-0 max-lg:flex-1 max-lg:overflow-y-auto"
+      )}>
+        <div className={cn(panel !== "a" && "max-lg:hidden")}>
         <DeckFace
           id="a"
           deck={decks.a}
@@ -272,8 +306,9 @@ export function DjStudio() {
           }}
           onBpm={(value) => patch("a", { bpm: value })}
         />
+        </div>
 
-        <section className="flex flex-col gap-3 rounded-2xl border border-white/10 bg-[#111] p-3">
+        <section className={cn("flex flex-col gap-3 rounded-2xl border border-white/10 bg-[#111] p-3", panel !== "mix" && "max-lg:hidden")}>
           <p className="text-center text-[10px] font-semibold uppercase tracking-[0.2em] text-red-500">Mixer</p>
           <div className="grid grid-cols-3 justify-items-center gap-2">
             <Fader tone="a" label="Gain A" value={decks.a.volume} onChange={(value) => {
@@ -335,6 +370,7 @@ export function DjStudio() {
           </label>
         </section>
 
+        <div className={cn(panel !== "b" && "max-lg:hidden")}>
         <DeckFace
           id="b"
           deck={decks.b}
@@ -403,9 +439,11 @@ export function DjStudio() {
           }}
           onBpm={(value) => patch("b", { bpm: value })}
         />
+        </div>
       </div>
 
       <StudioTools
+        mobileTab={panel === "songs" || panel === "jingles" || panel === "deck" || panel === "loops" || panel === "effects" ? panel : null}
         decks={decks}
         onJingle={(url) => void engine.resume().then(() => engine.playJingle(url))}
         onStinger={(kind) => void engine.resume().then(() => engine.playStinger(kind))}
@@ -747,6 +785,7 @@ type ToolTab = (typeof toolTabs)[number];
 
 function StudioTools({
   decks,
+  mobileTab = null,
   onJingle,
   onStinger,
   onRate,
@@ -773,8 +812,10 @@ function StudioTools({
   onBrake: (id: DeckId) => void;
   onLoad: (song: Song, deck: DeckId) => void;
   onLoadMany: (songs: Song[], deck: DeckId) => void;
+  mobileTab?: ToolTab | null;
 }) {
   const [tab, setTab] = useState<ToolTab>("songs");
+  const shown = mobileTab ?? tab;
   const [deckId, setDeckId] = useState<DeckId>("a");
   const [echo, setEcho] = useState(0);
   const [jingles, setJingles] = useState<Array<{ name: string; url: string }>>([]);
@@ -788,8 +829,8 @@ function StudioTools({
   };
 
   return (
-    <section className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-2xl border border-white/10 bg-[#111] p-3">
-      <div className="flex gap-2 overflow-x-auto pb-2">
+    <section className={cn("flex min-h-0 flex-1 flex-col overflow-hidden rounded-2xl border border-white/10 bg-[#111] p-3", mobileTab == null && "max-lg:hidden")}>
+      <div className="hidden gap-2 overflow-x-auto pb-2 lg:flex">
         {toolTabs.map((item) => (
           <button
             key={item}
@@ -804,7 +845,7 @@ function StudioTools({
           </button>
         ))}
       </div>
-      {tab !== "songs" && (
+      {shown !== "songs" && (
         <div className="mb-2 flex gap-2">
           {(["a", "b"] as DeckId[]).map((id) => (
             <button
@@ -818,8 +859,8 @@ function StudioTools({
           ))}
         </div>
       )}
-      {tab === "songs" && <Browser onLoad={onLoad} onLoadMany={onLoadMany} embedded />}
-      {tab === "jingles" && (
+      {shown === "songs" && <Browser onLoad={onLoad} onLoadMany={onLoadMany} embedded />}
+      {shown === "jingles" && (
         <div className="space-y-3">
           <label className="inline-flex h-10 cursor-pointer items-center rounded-full bg-[#e10600] px-4 text-xs font-semibold text-white">
             Upload jingle
@@ -852,7 +893,7 @@ function StudioTools({
           </div>
         </div>
       )}
-      {tab === "deck" && (
+      {shown === "deck" && (
         <div className="grid gap-3 sm:grid-cols-2">
           <label className="text-[10px] uppercase tracking-wide text-white/50">
             Pitch {deck.rate.toFixed(2)}
@@ -871,7 +912,7 @@ function StudioTools({
           </button>
         </div>
       )}
-      {tab === "loops" && (
+      {shown === "loops" && (
         <div className="flex flex-wrap gap-2">
           {loops.map((seconds) => (
             <button
@@ -889,7 +930,7 @@ function StudioTools({
           ))}
         </div>
       )}
-      {tab === "effects" && (
+      {shown === "effects" && (
         <div className="grid gap-3 sm:grid-cols-2">
           <label className="text-[10px] uppercase tracking-wide text-white/50">
             Filter
@@ -1044,7 +1085,7 @@ function Browser({ onLoad, onLoadMany, embedded = false }: { onLoad: (song: Song
       {note && <p className="mt-2 text-xs text-white/70">{note}</p>}
       {tab === "online" && <WebBrowser onLoad={onLoad} lifted={keyboard.open} />}
       {tab !== "online" && (
-      <div className={cn("mt-3 min-h-0 flex-1 space-y-1 overflow-y-auto", keyboard.open ? "pb-3" : "max-h-64 lg:max-h-none")}>
+      <div className={cn("mt-3 min-h-0 flex-1 space-y-1 overflow-y-auto", keyboard.open && "pb-3")}>
         {picked.length > 0 && (
           <div className="mb-2 flex flex-wrap gap-2">
             <button type="button" onClick={() => { onLoadMany(songs.filter((song) => picked.includes(song.id)), "a"); setPicked([]); }} className="h-10 rounded-full bg-black px-3 text-xs font-semibold text-white">Load {picked.length} on A</button>

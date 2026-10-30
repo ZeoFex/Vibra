@@ -20,7 +20,7 @@ export function AuthSplit({
         className={cn(
           admin
             ? "hidden w-1/2 items-center justify-center bg-[#1a1028]/80 px-10 lg:flex"
-            : "relative h-48 w-full shrink-0 overflow-hidden sm:h-56 lg:h-auto lg:min-h-screen lg:w-1/2"
+            : "auth-hero relative h-48 w-full shrink-0 overflow-hidden sm:h-56 lg:h-auto lg:min-h-screen lg:w-1/2"
         )}
       >
         {admin ? (
@@ -42,8 +42,7 @@ export function AuthSplit({
               sizes="(max-width: 1024px) 100vw, 50vw"
               className="object-cover object-[center_22%]"
             />
-            <div className="pointer-events-none absolute inset-0 bg-[#100818]/45" />
-            <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-[#100818] lg:hidden" />
+            <div className="pointer-events-none absolute inset-0 bg-black/35" />
           </>
         )}
       </div>
