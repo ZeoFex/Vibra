@@ -92,6 +92,26 @@ body {
   backdrop-filter: none;
 }
 
+.profile-surface {
+  background: var(--card);
+  color: var(--ink);
+  border: 1px solid var(--line);
+}
+
+.profile-muted {
+  color: color-mix(in srgb, var(--ink) 62%, transparent);
+}
+
+.profile-field {
+  background: var(--page) !important;
+  color: var(--ink) !important;
+  border-color: var(--line);
+}
+
+.profile-field::placeholder {
+  color: color-mix(in srgb, var(--ink) 45%, transparent);
+}
+
 html[data-theme="dark"] {
   --page: #121212;
   --chrome: #000000;
