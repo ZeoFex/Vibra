@@ -120,7 +120,7 @@ export function Sidebar() {
   );
 
   return (
-    <aside className="relative z-[70] hidden h-full w-64 shrink-0 flex-col overflow-hidden border-r border-white/10 bg-black/40 p-4 backdrop-blur-xl lg:flex">
+    <aside className="app-chrome relative z-[70] hidden h-full w-64 shrink-0 flex-col overflow-hidden border-r p-4 lg:flex">
       {renderNav()}
     </aside>
   );
@@ -137,7 +137,7 @@ const mobileTabs = [
 export function MobileTabBar() {
   const pathname = usePathname();
   return (
-    <nav className="fixed inset-x-0 bottom-0 z-[60] border-t border-white/10 bg-black/95 px-1 pb-[env(safe-area-inset-bottom,0px)] backdrop-blur-xl lg:hidden">
+    <nav className="app-chrome fixed inset-x-0 bottom-0 z-[60] border-t px-1 pb-[env(safe-area-inset-bottom,0px)] lg:hidden">
       <div className="grid h-[var(--tab-bar-height)] grid-cols-5">
         {mobileTabs.map(({ href, label, icon: Icon }) => {
           const active = pathname === href || pathname.startsWith(href + "/");
@@ -182,7 +182,7 @@ export function TopBar() {
 
   return (
     <>
-    <header className="shrink-0 border-b border-white/5 bg-black/40 backdrop-blur-xl">
+    <header className="app-chrome shrink-0 border-b">
     <div className="hidden items-center gap-2 px-4 py-3 md:flex md:px-6">
       <Button variant="ghost" size="icon-sm">
         <ChevronLeft size={18} />

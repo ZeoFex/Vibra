@@ -22,7 +22,7 @@ export function SplashScreen() {
 
   return (
     <div
-      className={`fixed inset-0 z-[200] flex items-center justify-center bg-[#1a1028] px-6 pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)] transition-opacity duration-500 ${
+      className={`app-page fixed inset-0 z-[200] flex items-center justify-center px-6 pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)] transition-opacity duration-500 ${
         phase === "exit" ? "pointer-events-none opacity-0" : "opacity-100"
       }`}
       role="status"

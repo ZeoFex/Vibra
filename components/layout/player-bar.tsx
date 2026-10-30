@@ -23,6 +23,34 @@ import { createPortal } from "react-dom";
 import { usePlayer } from "@/lib/contexts/app-context";
 import { cn, formatDuration } from "@/lib/utils";
 
+function SineWave({ playing }: { playing: boolean }) {
+  const [phase, setPhase] = useState(0);
+
+  useEffect(() => {
+    if (!playing) return;
+    let frame = 0;
+    const tick = (now: number) => {
+      setPhase(now / 1000);
+      frame = requestAnimationFrame(tick);
+    };
+    frame = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(frame);
+  }, [playing]);
+
+  const points = Array.from({ length: 64 }, (_, index) => {
+    const x = (index / 63) * 320;
+    const wave = Math.sin(index * 0.42 + phase * 7) * 0.65 + Math.cos(index * 0.21 + phase * 4) * 0.35;
+    const y = 14 - wave * (playing ? 10 : 2);
+    return `${x.toFixed(1)},${y.toFixed(1)}`;
+  }).join(" ");
+
+  return (
+    <svg viewBox="0 0 320 28" className="h-6 w-28 text-violet-300 sm:w-40" aria-hidden>
+      <polyline points={points} fill="none" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" />
+    </svg>
+  );
+}
+
 function SpeedButton({ size = "md" }: { size?: "sm" | "md" | "lg" }) {
   const { playbackRate, cyclePlaybackRate } = usePlayer();
   const label = `${playbackRate}×`;
@@ -76,6 +104,7 @@ export function PlayerBar() {
   const [mounted, setMounted] = useState(false);
   const [muted, setMuted] = useState(false);
   const [tint, setTint] = useState("rgb(18, 12, 28)");
+  const [lightTheme, setLightTheme] = useState(false);
   const [screenTint, setScreenTint] = useState("rgb(72, 24, 48)");
   const [credits, setCredits] = useState({ composer: "", songwriter: "" });
 
@@ -131,6 +160,14 @@ export function PlayerBar() {
   }, [currentSong?.cover]);
 
   useEffect(() => {
+    const sync = () => setLightTheme(document.documentElement.dataset.theme === "light");
+    sync();
+    const observer = new MutationObserver(sync);
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+    return () => observer.disconnect();
+  }, []);
+
+  useEffect(() => {
     if (!showNowPlaying || !currentSong) return;
     let cancelled = false;
     setCredits({ composer: currentSong.producers || "", songwriter: currentSong.songwriters || "" });
@@ -165,8 +202,8 @@ export function PlayerBar() {
 
   return (
     <div
-      className="fixed bottom-[var(--tab-bar-height)] left-0 right-0 z-50 overflow-hidden lg:bottom-0 lg:border-t lg:border-white/10 lg:!bg-black/90 lg:pb-[env(safe-area-inset-bottom,0px)] lg:backdrop-blur-xl"
-      style={{ backgroundColor: tint }}
+      className="fixed bottom-[var(--tab-bar-height)] left-0 right-0 z-50 overflow-hidden lg:bottom-0 lg:border-t lg:!bg-[var(--chrome)] lg:!text-[var(--ink)] lg:pb-[env(safe-area-inset-bottom,0px)]"
+      style={{ backgroundColor: lightTheme ? "var(--chrome)" : tint }}
     >
       <div
         className="group relative h-0.5 w-full cursor-pointer bg-white/15 lg:h-1 lg:bg-white/10"
@@ -197,6 +234,7 @@ export function PlayerBar() {
           </button>
           <div className="min-w-0 flex-1">
             <p className="truncate text-xs font-medium text-white sm:text-sm">{currentSong.title}</p>
+            <span className="sm:hidden"><SineWave playing={isPlaying} /></span>
             <Link
               href={`/artist/${currentSong.artistId}`}
               className="truncate text-[11px] text-white/50 hover:underline sm:text-xs"
@@ -256,7 +294,7 @@ export function PlayerBar() {
           </div>
           <div className="hidden items-center gap-2 text-[10px] text-white/40 sm:flex sm:text-xs">
             <span>{formatDuration(progress)}</span>
-            <span>/</span>
+            <SineWave playing={isPlaying} />
             <span>{formatDuration(currentSong.duration)}</span>
           </div>
         </div>
@@ -349,7 +387,7 @@ export function PlayerBar() {
       </div>
 
       {mounted && showNowPlaying && createPortal(
-        <div className="fixed inset-0 z-[80] overflow-y-auto lg:hidden" style={{ backgroundColor: screenTint }}>
+        <div className="fixed inset-0 z-[110] overflow-y-auto lg:hidden" style={{ backgroundColor: screenTint }}>
           <div className="mx-auto flex min-h-dvh max-w-lg flex-col px-4 pb-10 pt-[max(0.75rem,env(safe-area-inset-top))]">
             <div className="flex items-center justify-between">
               <button type="button" onClick={() => setShowNowPlaying(false)} aria-label="Close" className="cursor-pointer p-2 text-white">
@@ -458,8 +496,8 @@ export function PlayerBar() {
         document.body
       )}
       {mounted && showNowPlaying && createPortal(
-        <div className="pointer-events-none fixed inset-0 z-[60] hidden lg:block">
-          <div className="pointer-events-auto absolute bottom-[var(--app-chrome-bottom)] left-64 right-0 top-0 flex overflow-hidden bg-zinc-950">
+        <div className="pointer-events-none fixed inset-0 z-[110] hidden lg:block">
+          <div className="pointer-events-auto absolute bottom-[var(--app-chrome-bottom)] left-64 right-0 top-0 flex overflow-hidden" style={{ backgroundColor: screenTint }}>
           <div className="h-full min-h-0 min-w-0 overflow-y-auto px-8 py-6">
             <div className="flex items-end gap-6">
               <div className="relative h-44 w-44 shrink-0 overflow-hidden rounded-md shadow-lg">
@@ -517,7 +555,7 @@ export function PlayerBar() {
           <aside className="hidden w-[340px] shrink-0 flex-col overflow-y-auto border-l border-white/10 bg-black/30 p-4 xl:flex">
             <div className="mb-3 flex items-center justify-between gap-2">
               <p className="truncate text-sm font-semibold text-white">{currentSong.title}</p>
-              <button type="button" onClick={() => setShowNowPlaying(false)} className="cursor-pointer text-white/60 hover:text-white" aria-label="Close">
+              <button type="button" onClick={() => setShowNowPlaying(false)} className="flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-full bg-black/35 text-white hover:bg-black/50" aria-label="Close">
                 <X size={18} />
               </button>
             </div>
@@ -534,7 +572,7 @@ export function PlayerBar() {
               </button>
             </div>
           </aside>
-          <button type="button" onClick={() => setShowNowPlaying(false)} className="absolute right-4 top-4 cursor-pointer text-white/70 hover:text-white xl:hidden" aria-label="Close">
+          <button type="button" onClick={() => setShowNowPlaying(false)} className="absolute right-4 top-4 z-10 flex h-10 w-10 cursor-pointer items-center justify-center rounded-full bg-black/35 text-white hover:bg-black/50 xl:hidden" aria-label="Close">
             <X size={20} />
           </button>
           </div>
