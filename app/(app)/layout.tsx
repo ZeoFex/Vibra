@@ -8,13 +8,12 @@ import { SocialProvider } from "@/lib/contexts/social-context";
 import { NotificationProvider } from "@/lib/contexts/notification-context";
 import { ChatProvider } from "@/lib/contexts/chat-context";
 import { DjChromeProvider } from "@/lib/dj/chrome";
-import { useRouter, usePathname } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
-  const { isAuthenticated, isAuthReady } = useAuth();
-  const router = useRouter();
+  const { isAuthReady } = useAuth();
   const pathname = usePathname();
   const { isPlayerBarVisible } = usePlayer();
   const studio = pathname.startsWith("/dj");
@@ -26,15 +25,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     if (studio) setImmersive(true);
   }, [studio, pathname]);
 
-  useEffect(() => {
-    if (!isAuthReady) return;
-    if (!isAuthenticated) {
-      const redirect = encodeURIComponent(pathname);
-      router.replace(`/login?redirect=${redirect}`);
-    }
-  }, [isAuthenticated, isAuthReady, pathname, router]);
-
-  if (!isAuthReady || !isAuthenticated) {
+  if (!isAuthReady) {
     return (
       <div className="flex min-h-screen items-center justify-center gradient-bg">
         <div className="h-8 w-8 animate-spin rounded-full border-2 border-violet-500 border-t-transparent" />

@@ -1,5 +1,4 @@
 import Link from "next/link";
-import Image from "next/image";
 import {
   Play,
   Crown,
@@ -44,76 +43,55 @@ export default function LandingPage() {
   return (
     <div className="min-h-screen bg-black text-white">
       {/* Nav */}
-      <nav className="app-chrome fixed top-0 z-50 flex w-full items-center justify-between gap-2 border-b px-4 py-3 sm:px-6 sm:py-4">
-        <Image
-          src="/vibra-logo-clear.png"
-          alt="Vibra"
-          width={220}
-          height={72}
-          priority
-          className="h-12 w-auto sm:h-14 md:h-16"
-        />
-        <div className="flex shrink-0 items-center gap-2 sm:gap-3">
+      <nav className="app-chrome fixed top-0 z-50 flex w-full items-center justify-between gap-3 border-b px-4 py-3 sm:px-6">
+        <Link href="/" className="flex min-w-0 items-center gap-2">
+          <VibraLogo size={36} className="h-9 w-9 rounded-lg" />
+          <span className="truncate text-base font-semibold tracking-tight">Vibra</span>
+        </Link>
+        <div className="flex shrink-0 items-center gap-2">
           <Link href="/login">
-            <Button variant="ghost" size="sm" className="px-3 sm:px-4">Log in</Button>
+            <Button variant="ghost" size="sm" className="px-3">Log in</Button>
           </Link>
           <Link href="/signup">
-            <Button variant="default" size="sm" className="px-3 sm:px-4">
-              <span className="hidden sm:inline">Sign up free</span>
-              <span className="sm:hidden">Sign up</span>
-            </Button>
+            <Button variant="default" size="sm" className="px-3">Sign up</Button>
           </Link>
         </div>
       </nav>
 
-      {/* Hero */}
-      <section className="relative flex min-h-[100dvh] items-start justify-center overflow-hidden pt-24">
+      <section className="relative flex min-h-[100dvh] items-center justify-center overflow-hidden px-6 pt-20 pb-16">
         <div className="absolute inset-0 gradient-bg" />
-        <div className="absolute left-1/2 top-1/3 h-[500px] w-[500px] -translate-x-1/2 rounded-full bg-violet-600/20 blur-[120px] animate-pulse-glow" />
-        <div className="absolute right-1/4 top-1/4 h-[300px] w-[300px] rounded-full bg-fuchsia-600/15 blur-[100px] animate-pulse-glow" />
+        <div className="absolute left-1/2 top-1/3 h-72 w-72 -translate-x-1/2 rounded-full bg-violet-600/15 blur-3xl" />
 
-        <div className="relative z-10 mx-auto max-w-5xl px-6 pt-4 text-center md:pt-8">
-          <div className="mb-4 flex items-center justify-center gap-4 sm:gap-8">
-            <Image
-              src="/vibra-logo-clear.png"
-              alt="Vibra"
-              width={560}
-              height={200}
-              priority
-              className="h-auto w-40 sm:w-56 md:w-72 lg:w-96"
-            />
-            <VoiceRecorder />
-          </div>
-          <p className="mb-4 text-sm font-medium uppercase tracking-widest text-violet-400">
-            Feel Every Beat
+        <div className="relative z-10 mx-auto flex w-full max-w-xl flex-col items-center text-center">
+          <VibraLogo size={88} className="mb-5 h-20 w-20 rounded-2xl sm:h-24 sm:w-24" />
+          <p className="text-xs font-medium uppercase tracking-[0.28em] text-violet-400">
+            Feel every beat
           </p>
-          <h1 className="mb-4 text-4xl font-bold leading-tight sm:text-5xl md:text-6xl">
+          <h1 className="mt-4 text-4xl font-bold leading-tight sm:text-5xl">
             Music that moves
             <br />
             <span className="gradient-text">with you</span>
           </h1>
-          <div className="mt-6 flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
-            <Link href="/signup">
-              <Button variant="premium" size="lg" className="gap-2">
+          <p className="mt-4 max-w-md text-sm text-white/55 sm:text-base">
+            Listen, discover, and mix in one place.
+          </p>
+          <div className="mt-8 flex w-full flex-col items-stretch justify-center gap-3 sm:w-auto sm:flex-row sm:items-center">
+            <Link href="/home">
+              <Button variant="premium" size="lg" className="w-full gap-2 sm:w-auto">
                 <Play size={18} fill="currentColor" />
-                Start Listening Free
+                Start listening
               </Button>
             </Link>
             <Link href="/premium">
-              <Button variant="outline" size="lg" className="gap-2">
+              <Button variant="outline" size="lg" className="w-full gap-2 sm:w-auto">
                 <Crown size={18} />
                 Go Premium
               </Button>
             </Link>
           </div>
-        </div>
-
-        {/* Floating album art */}
-        <div className="absolute bottom-20 left-10 hidden h-32 w-32 overflow-hidden rounded-2xl shadow-2xl shadow-violet-600/20 animate-float lg:block">
-          <Image src="https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?w=200&h=200&fit=crop" alt="" fill className="object-cover" />
-        </div>
-        <div className="absolute bottom-32 right-16 hidden h-24 w-24 overflow-hidden rounded-2xl shadow-2xl shadow-fuchsia-600/20 animate-float lg:block" style={{ animationDelay: "1s" }}>
-          <Image src="https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=200&h=200&fit=crop" alt="" fill className="object-cover" />
+          <div className="mt-8">
+            <VoiceRecorder />
+          </div>
         </div>
       </section>
 

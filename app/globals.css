@@ -124,6 +124,11 @@ html[data-theme="light"] .bg-black\/40 {
   background-color: var(--card);
 }
 
+html[data-theme="light"] .auth-hero,
+html[data-theme="light"] .auth-hero img {
+  background-color: transparent;
+}
+
 html[data-theme="light"] [class*="bg-[#100818]"],
 html[data-theme="light"] [class*="bg-[#0c0714]"],
 html[data-theme="light"] [class*="bg-[#140c22]"],
