@@ -44,7 +44,7 @@ export default function LandingPage() {
   return (
     <div className="min-h-screen bg-black text-white">
       {/* Nav */}
-      <nav className="fixed top-0 z-50 flex w-full items-center justify-between gap-2 border-b border-white/5 bg-black/60 px-4 py-3 backdrop-blur-xl sm:px-6 sm:py-4">
+      <nav className="app-chrome fixed top-0 z-50 flex w-full items-center justify-between gap-2 border-b px-4 py-3 sm:px-6 sm:py-4">
         <Image
           src="/vibra-logo-clear.png"
           alt="Vibra"

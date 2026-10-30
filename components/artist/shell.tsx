@@ -88,7 +88,7 @@ export function ArtistShell({ children }: { children: React.ReactNode }) {
       {mobileOpen && (
         <div className="fixed inset-0 z-50 lg:hidden">
           <div className="absolute inset-0 bg-black/60" onClick={() => setMobileOpen(false)} />
-          <aside className="relative flex h-full w-[min(18rem,85vw)] flex-col bg-zinc-950 p-4">
+          <aside className="app-chrome relative flex h-full w-[min(18rem,85vw)] flex-col p-4">
             <button onClick={() => setMobileOpen(false)} className="absolute right-4 top-4 text-white/60" aria-label="Close menu">
               <X size={20} />
             </button>
@@ -97,12 +97,12 @@ export function ArtistShell({ children }: { children: React.ReactNode }) {
         </div>
       )}
 
-      <aside className="hidden w-64 shrink-0 flex-col border-r border-white/10 bg-black/40 p-4 backdrop-blur-xl lg:flex">
+      <aside className="app-chrome hidden w-64 shrink-0 flex-col border-r p-4 lg:flex">
         {renderNav()}
       </aside>
 
       <div className="flex min-w-0 flex-1 flex-col">
-        <header className="sticky top-0 z-40 flex items-center gap-2 border-b border-white/5 bg-black/40 px-3 py-3 backdrop-blur-xl sm:px-4 md:px-8">
+        <header className="app-chrome sticky top-0 z-40 flex items-center gap-2 border-b px-3 py-3 sm:px-4 md:px-8">
           <button
             onClick={() => setMobileOpen(true)}
             className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white/10 lg:hidden"

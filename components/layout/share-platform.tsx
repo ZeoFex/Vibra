@@ -137,7 +137,7 @@ export function ShareMenu({
   return (
     <div className="relative" ref={panel} onClick={(event) => event.stopPropagation()}>
       {iconOnly ? (
-        <button type="button" aria-label={`Share ${target.title}`} onClick={() => setOpen((value) => !value)} className="flex h-9 w-9 cursor-pointer touch-manipulation items-center justify-center rounded-full bg-[#5b21b6] text-white transition hover:bg-violet-400">
+        <button type="button" aria-label={`Share ${target.title}`} onClick={() => setOpen((value) => !value)} className="flex h-9 w-9 cursor-pointer touch-manipulation items-center justify-center rounded-full bg-violet-300 text-violet-950 shadow-sm transition hover:bg-violet-200">
           <Share2 size={16} />
         </button>
       ) : (

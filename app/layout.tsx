@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { SplashScreen } from "@/components/brand/splash-screen";
+import { ThemeToggle } from "@/components/theme/theme-toggle";
 import { AuthProvider, PlayerProvider } from "@/lib/contexts/app-context";
 import { PlaylistProvider } from "@/lib/contexts/playlist-context";
 import { ArtistAuthProvider } from "@/lib/contexts/artist-auth-context";
@@ -25,9 +26,19 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className="h-full antialiased dark"
+      className="h-full antialiased"
+      data-theme="dark"
+      suppressHydrationWarning
     >
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: "try{var t=localStorage.getItem('vibra-theme');document.documentElement.dataset.theme=t==='light'?'light':'dark';}catch(e){}",
+          }}
+        />
+      </head>
       <body className="min-h-full min-h-dvh bg-black text-white">
+        <ThemeToggle />
         <SplashScreen />
         <AuthProvider>
           <ArtistAuthProvider>

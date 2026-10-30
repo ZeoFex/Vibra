@@ -102,9 +102,9 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
   );
 
   return (
-    <div className="flex h-dvh overflow-hidden bg-zinc-950 text-white">
+    <div className="app-page flex h-dvh overflow-hidden">
       {/* Sidebar desktop */}
-      <aside className="hidden h-full w-64 shrink-0 flex-col border-r border-white/10 bg-black/40 lg:flex">
+      <aside className="app-chrome hidden h-full w-64 shrink-0 flex-col border-r lg:flex">
         <div className="flex h-full min-h-0 flex-col p-4">
           <Link href="/home" className="mb-4 flex items-center gap-2 text-sm text-white/40 hover:text-white">
             <ArrowLeft size={16} />

@@ -21,6 +21,9 @@ interface DeckNodes {
   mid: BiquadFilterNode;
   high: BiquadFilterNode;
   gain: GainNode;
+  filter: BiquadFilterNode;
+  delay: DelayNode;
+  feedback: GainNode;
   analyser: AnalyserNode;
 }
 
@@ -58,6 +61,8 @@ export class DjEngine {
     b: { on: false, start: 0, seconds: 4 },
   };
   private jingleAudio: HTMLAudioElement | null = null;
+  private ended = new Map<DeckId, () => void>();
+  private baseRate: Record<DeckId, number> = { a: 1, b: 1 };
 
   async resume() {
     const ctx = this.context();
@@ -94,17 +99,30 @@ export class DjEngine {
     const high = ctx.createBiquadFilter();
     high.type = "highshelf";
     high.frequency.value = 6500;
+    const filter = ctx.createBiquadFilter();
+    filter.type = "lowpass";
+    filter.frequency.value = 18000;
     const gain = ctx.createGain();
     const analyser = ctx.createAnalyser();
     analyser.fftSize = 64;
     source.connect(low);
     low.connect(mid);
     mid.connect(high);
-    high.connect(gain);
+    high.connect(filter);
+    const delay = ctx.createDelay(1);
+    delay.delayTime.value = 0;
+    const feedback = ctx.createGain();
+    feedback.gain.value = 0;
+    filter.connect(gain);
+    filter.connect(delay);
+    delay.connect(feedback);
+    feedback.connect(delay);
+    delay.connect(gain);
     gain.connect(analyser);
+    audio.addEventListener("ended", () => this.ended.get(id)?.());
     analyser.connect(this.master!);
     audio.addEventListener("timeupdate", () => this.applyLoop(id));
-    this.decks.set(id, { audio, source, low, mid, high, gain, analyser });
+    this.decks.set(id, { audio, source, low, mid, high, gain, filter, delay, feedback, analyser });
     this.applyCrossfader();
     this.loops[id] = { on: false, start: 0, seconds: 4 };
   }
@@ -147,6 +165,59 @@ export class DjEngine {
     const next = Math.min(2, Math.max(0.5, rate));
     audio.playbackRate = next;
     audio.defaultPlaybackRate = next;
+    this.baseRate[id] = next;
+  }
+
+  onEnded(id: DeckId, callback: () => void) {
+    this.ended.set(id, callback);
+  }
+
+  bend(id: DeckId, amount: number) {
+    const audio = this.decks.get(id)?.audio;
+    if (!audio) return;
+    audio.playbackRate = Math.min(2, Math.max(0.5, this.baseRate[id] + amount));
+  }
+
+  releaseBend(id: DeckId) {
+    const audio = this.decks.get(id)?.audio;
+    if (!audio) return;
+    audio.playbackRate = this.baseRate[id];
+  }
+
+  beatJump(id: DeckId, beats: number, bpm = 128) {
+    const audio = this.decks.get(id)?.audio;
+    if (!audio || !Number.isFinite(audio.duration)) return;
+    const step = (60 / bpm) * beats;
+    audio.currentTime = Math.min(Math.max(0, audio.currentTime + step), audio.duration);
+  }
+
+  setEcho(id: DeckId, amount: number) {
+    const deck = this.decks.get(id);
+    if (!deck) return;
+    const wet = Math.min(1, Math.max(0, amount));
+    deck.delay.delayTime.value = wet === 0 ? 0 : 0.18 + wet * 0.28;
+    deck.feedback.gain.value = wet * 0.45;
+  }
+
+  setFilter(id: DeckId, knob: number) {
+    const filter = this.decks.get(id)?.filter;
+    if (!filter) return;
+    const amount = Math.min(1, Math.max(0, knob));
+    filter.frequency.value = 180 + amount * 17820;
+  }
+
+  brake(id: DeckId) {
+    const audio = this.decks.get(id)?.audio;
+    if (!audio) return;
+    const start = audio.playbackRate || 1;
+    const begun = performance.now();
+    const step = () => {
+      const t = Math.min(1, (performance.now() - begun) / 700);
+      audio.playbackRate = start * (1 - t) + 0.15 * t;
+      if (t < 1) requestAnimationFrame(step);
+      else audio.pause();
+    };
+    requestAnimationFrame(step);
   }
 
   nudgeRate(id: DeckId, direction: -1 | 1) {
